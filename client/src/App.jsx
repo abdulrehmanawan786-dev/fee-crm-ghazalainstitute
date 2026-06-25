@@ -12,9 +12,6 @@ export default function App() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // We don't have a "whoami" endpoint, so just trust a stored token until an API
-    // call comes back 401 (handled globally below). This avoids an extra round trip
-    // on every page load.
     setUsername(getToken() ? 'admin' : null);
     setChecking(false);
     const onExpire = () => setUsername(null);
@@ -42,7 +39,7 @@ function Dashboard({ onLogout }) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [detailStudent, setDetailStudent] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [drillDown, setDrillDown] = useState(null); // { title, students: [] }
+  const [drillDown, setDrillDown] = useState(null);
   const [monthly, setMonthly] = useState(null);
   const [overdueIds, setOverdueIds] = useState([]);
   const [pendingImageIds, setPendingImageIds] = useState([]);
@@ -154,11 +151,16 @@ function Dashboard({ onLogout }) {
       <div style={{ borderBottom: '2px solid #1B2A4A', padding: '24px 20px 18px', background: '#F7F3EC' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-              <h1 style={{ fontFamily: "Georgia, 'Iowan Old Style', serif", fontSize: 28, fontWeight: 700, margin: 0 }}>Ghazala Institute</h1>
-              <span style={{ fontFamily: "Georgia, serif", fontSize: 15, fontStyle: 'italic', color: '#6B6458' }}>— Fee Ledger</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <img src="/logo.png" alt="Ghazala Institute" style={{ height: 52, width: 'auto' }} />
+              <div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                  <h1 style={{ fontFamily: "Georgia, 'Iowan Old Style', serif", fontSize: 28, fontWeight: 700, margin: 0 }}>Ghazala Institute</h1>
+                  <span style={{ fontFamily: "Georgia, serif", fontSize: 15, fontStyle: 'italic', color: '#6B6458' }}>— Fee Ledger</span>
+                </div>
+                <p style={{ margin: '4px 0 0', color: '#6B6458', fontSize: 13 }}>German · IELTS · PTE · Spoken English</p>
+              </div>
             </div>
-            <p style={{ margin: '4px 0 0', color: '#6B6458', fontSize: 13 }}>German · IELTS · PTE · Spoken English</p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={downloadCsv} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
