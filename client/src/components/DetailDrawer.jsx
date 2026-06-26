@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Clock, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
+import { X, Check, Clock, AlertTriangle, Pencil, Trash2, Bell } from 'lucide-react';
 import { fmt, formatDate, todayStr, netTotal, balance, findPayment, METHODS, STATUS_STYLE } from '../helpers';
 import { api } from '../api/client';
 import { Stamp } from './StudentTable';
 import ReceiptView from './ReceiptView';
-// This is the full "student profile" view — registration details, enrollment status,
-// payment breakdown, and photos all in one place, with edit/delete actions available
-// directly here so the admin/agent doesn't need to go back to the table for routine work.
+
 export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDeleteRequest }) {
   const [methodFor, setMethodFor] = useState(null);
   const [images, setImages] = useState([]);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [viewerImage, setViewerImage] = useState(null);
   const [printingPayment, setPrintingPayment] = useState(null);
+  const [reminderLogs, setReminderLogs] = useState([]);
+  const [sendingReminder, setSendingReminder] = useState(null);
   const total = netTotal(student);
   const bal = balance(student);
 
@@ -25,16 +25,41 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
       } catch (e) { /* none */ }
       setImgLoaded(true);
     })();
+    (async () => {
+      try {
+        const logs = await api.reminderLogs();
+        setReminderLogs(logs.filter(l => l.student_id === student.id));
+      } catch (e) { /* none */ }
+    })();
   }, [student.id]);
+
+  useEffect(() => {
+    function handleEsc(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
 
   async function pickMethod(type, method) {
     const updated = await api.markPaid(student.id, type, method);
     setMethodFor(null);
     onChanged(updated);
   }
+
   async function unmark(type) {
     const updated = await api.unmarkPaid(student.id, type);
     onChanged(updated);
+  }
+
+  async function sendReminderForPayment(type) {
+    setSendingReminder(type);
+    try {
+      await api.sendReminders();
+      const logs = await api.reminderLogs();
+      setReminderLogs(logs.filter(l => l.student_id === student.id));
+    } catch (e) { /* none */ }
+    setSendingReminder(null);
   }
 
   const reg = findPayment(student, 'registration');
@@ -97,9 +122,11 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
         </div>
         {reg && (
           <LineItem label="Registration" payment={reg}
-  onPay={() => setMethodFor('registration')} onUnmark={() => unmark('registration')}
-  onPrintReceipt={() => setPrintingPayment(reg)}
-  showMethodPicker={methodFor === 'registration'} onPickMethod={m => pickMethod('registration', m)} />
+            onPay={() => setMethodFor('registration')} onUnmark={() => unmark('registration')}
+            onPrintReceipt={() => setPrintingPayment(reg)}
+            showMethodPicker={methodFor === 'registration'} onPickMethod={m => pickMethod('registration', m)}
+            onSendReminder={() => sendReminderForPayment('registration')}
+            sendingReminder={sendingReminder === 'registration'} />
         )}
 
         <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '20px 0 8px', borderBottom: '1px solid #E3DCC9', paddingBottom: 4 }}>
@@ -107,22 +134,44 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
         </div>
         {student.payment_mode === 'lumpsum' && lump && (
           <LineItem label="Full payment" payment={lump}
-  onPay={() => setMethodFor('lumpsum')} onUnmark={() => unmark('lumpsum')}
-  onPrintReceipt={() => setPrintingPayment(lump)}
-  showMethodPicker={methodFor === 'lumpsum'} onPickMethod={m => pickMethod('lumpsum', m)} />
+            onPay={() => setMethodFor('lumpsum')} onUnmark={() => unmark('lumpsum')}
+            onPrintReceipt={() => setPrintingPayment(lump)}
+            showMethodPicker={methodFor === 'lumpsum'} onPickMethod={m => pickMethod('lumpsum', m)}
+            onSendReminder={() => sendReminderForPayment('lumpsum')}
+            sendingReminder={sendingReminder === 'lumpsum'} />
         )}
         {student.payment_mode !== 'lumpsum' && (
           <>
             {inst1 && <LineItem label="1st installment" payment={inst1}
-  onPay={() => setMethodFor('installment1')} onUnmark={() => unmark('installment1')}
-  onPrintReceipt={() => setPrintingPayment(inst1)}
-  showMethodPicker={methodFor === 'installment1'} onPickMethod={m => pickMethod('installment1', m)} />}
-{inst2 && <LineItem label="2nd installment" payment={inst2}
-  onPay={() => setMethodFor('installment2')} onUnmark={() => unmark('installment2')}
-  onPrintReceipt={() => setPrintingPayment(inst2)}
-  showMethodPicker={methodFor === 'installment2'} onPickMethod={m => pickMethod('installment2', m)} />}
+              onPay={() => setMethodFor('installment1')} onUnmark={() => unmark('installment1')}
+              onPrintReceipt={() => setPrintingPayment(inst1)}
+              showMethodPicker={methodFor === 'installment1'} onPickMethod={m => pickMethod('installment1', m)}
+              onSendReminder={() => sendReminderForPayment('installment1')}
+              sendingReminder={sendingReminder === 'installment1'} />}
+            {inst2 && <LineItem label="2nd installment" payment={inst2}
+              onPay={() => setMethodFor('installment2')} onUnmark={() => unmark('installment2')}
+              onPrintReceipt={() => setPrintingPayment(inst2)}
+              showMethodPicker={methodFor === 'installment2'} onPickMethod={m => pickMethod('installment2', m)}
+              onSendReminder={() => sendReminderForPayment('installment2')}
+              sendingReminder={sendingReminder === 'installment2'} />}
           </>
         )}
+
+        {/* Reminder History */}
+        {reminderLogs.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, borderBottom: '1px solid #E3DCC9', paddingBottom: 4 }}>
+              Reminder History ({reminderLogs.length} sent)
+            </div>
+            {reminderLogs.map(log => (
+              <div key={log.id} style={{ fontSize: 12, color: '#6B6458', padding: '5px 0', borderBottom: '1px solid #EFE9DA', display: 'flex', justifyContent: 'space-between' }}>
+                <span>📱 {log.message_type} — by <b>{log.sent_by}</b> ({log.sent_by_role})</span>
+                <span>{formatDate(log.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
       </div>
 
       {viewerImage && (
@@ -138,7 +187,7 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
   );
 }
 
-function LineItem({ label, payment, onPay, onUnmark, onPrintReceipt, showMethodPicker, onPickMethod }) {
+function LineItem({ label, payment, onPay, onUnmark, onPrintReceipt, showMethodPicker, onPickMethod, onSendReminder, sendingReminder }) {
   const { amount, due_date, paid_date, method, was_overdue } = payment;
   const status = paid_date ? 'paid' : (due_date && due_date < todayStr() ? 'overdue' : 'pending');
   return (
@@ -177,6 +226,11 @@ function LineItem({ label, payment, onPay, onUnmark, onPrintReceipt, showMethodP
             Undo
           </button>
         </div>
+      )}
+      {!paid_date && (
+        <button onClick={onSendReminder} disabled={sendingReminder} style={{ marginTop: 6, width: '100%', background: '#F0F7F4', color: '#2F6F4E', border: '1px solid #2F6F4E', borderRadius: 5, padding: '6px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+          <Bell size={12} /> {sendingReminder ? 'Sending...' : 'Send Reminder'}
+        </button>
       )}
     </div>
   );
