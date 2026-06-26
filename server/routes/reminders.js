@@ -2,61 +2,45 @@ const express = require('express');
 const pool = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { sendWhatsAppMessage } = require('../utils/whatsapp');
-
 const router = express.Router();
 
 async function sendReminders(sentBy, sentByRole) {
   try {
-    // Pending students
-    const [pending] = await pool.query(`
-      SELECT s.id, s.name, s.phone, s.course, s.mode
+    const [students] = await pool.query(`
+      SELECT DISTINCT s.id, s.name, s.phone, s.course, s.mode, 
+             p.amount, p.due_date, p.type
       FROM students s
+      JOIN payments p ON p.student_id = s.id
       WHERE s.status = 'Active'
+      AND s.remarks IS NULL
+      AND p.paid_date IS NULL
       AND (
-        SELECT COUNT(*) FROM payments p 
-        WHERE p.student_id = s.id AND p.paid_date IS NULL
-      ) > 0
+        MONTH(p.due_date) = MONTH(CURDATE()) AND YEAR(p.due_date) = YEAR(CURDATE())
+        OR p.due_date < CURDATE()
+      )
+      ORDER BY p.due_date ASC
     `);
-
-    // Overdue students
-    const [overdue] = await pool.query(`
-      SELECT s.id, s.name, s.phone, s.course, s.mode
-      FROM students s
-      WHERE s.status = 'Active'
-      AND (
-        SELECT COUNT(*) FROM payments p 
-        WHERE p.student_id = s.id AND p.paid_date IS NULL AND p.due_date < CURDATE()
-      ) > 0
-    `);
-
-    const allStudents = [...pending, ...overdue].filter(
-      (s, i, arr) => arr.findIndex(x => x.id === s.id) === i
-    );
 
     let sent = 0;
-    for (const student of allStudents) {
+    for (const student of students) {
       if (!student.phone) continue;
 
-      const message = `🔔 *Ghazala Institute — Fee Reminder*\n\nAssalam o Alaikum ${student.name}!\n\nAapki fee pending hai.\n📚 Course: ${student.course} (${student.mode})\n\nBrahe karam jald se jald fee jama karwayein.\n\nShukriya! 🙏\nGhazala Institute`;
+      const message = `Dear ${student.name},\n\nThis is a friendly reminder from Ghazala Institute regarding your upcoming fee payment.\n\n📚 Course: ${student.course} (${student.mode})\n💰 Amount Due: Rs. ${student.amount}\n📅 Due Date: ${student.due_date}\n\nKindly ensure your payment is submitted before the due date to avoid any inconvenience.\n\nFor any queries, please contact our administration.\n\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`;
 
       await sendWhatsAppMessage(student.phone, message);
-
       await pool.query(
         'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
         [student.id, sentBy, sentByRole, 'fee_reminder']
       );
-
       sent++;
     }
-
-    return { sent, total: allStudents.length };
+    return { sent, total: students.length };
   } catch (err) {
     console.error('Reminder error:', err);
     throw err;
   }
 }
 
-// Manual reminder — Admin or Agent
 router.post('/send', requireAuth, async (req, res) => {
   try {
     const result = await sendReminders(req.admin.username, req.admin.role);
@@ -66,11 +50,10 @@ router.post('/send', requireAuth, async (req, res) => {
   }
 });
 
-// Reminder logs
 router.get('/logs', requireAuth, async (req, res) => {
   try {
     const [logs] = await pool.query(`
-      SELECT rl.*, s.name as student_name, s.phone
+      SELECT rl.*, s.name as student_name, s.phone, s.course
       FROM reminder_logs rl
       JOIN students s ON s.id = rl.student_id
       ORDER BY rl.created_at DESC
