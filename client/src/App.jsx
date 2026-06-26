@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings } from 'lucide-react';
 import { api, getToken, setToken } from './api/client';
 import Login from './components/Login';
 import StudentTable from './components/StudentTable';
