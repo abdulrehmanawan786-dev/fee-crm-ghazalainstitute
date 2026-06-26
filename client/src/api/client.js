@@ -2,6 +2,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const ROOT_BASE = API_BASE.replace(/\/api\/?$/, '');
 
 let token = localStorage.getItem('ghazala_fees_token') || null;
+let role = localStorage.getItem('ghazala_fees_role') || null;
 
 export function setToken(t) {
   token = t;
@@ -10,6 +11,14 @@ export function setToken(t) {
 }
 export function getToken() {
   return token;
+}
+export function setRole(r) {
+  role = r;
+  if (r) localStorage.setItem('ghazala_fees_role', r);
+  else localStorage.removeItem('ghazala_fees_role');
+}
+export function getRole() {
+  return role;
 }
 
 async function request(path, options = {}) {
@@ -21,6 +30,7 @@ async function request(path, options = {}) {
 
   if (res.status === 401) {
     setToken(null);
+    setRole(null);
     window.dispatchEvent(new Event('ghazala-auth-expired'));
     throw new Error('Session expired. Please log in again.');
   }
@@ -37,9 +47,10 @@ async function request(path, options = {}) {
 export const api = {
   login: (username, password) =>
     request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
-changePassword: (currentPassword, newPassword) =>
+  changePassword: (currentPassword, newPassword) =>
     request('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
   loginHistory: () => request('/auth/login-history'),
+
   listStudents: (params) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
     return request(`/students?${qs}`);
