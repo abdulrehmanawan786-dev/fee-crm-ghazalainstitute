@@ -11,7 +11,7 @@ async function sendReminders(sentBy, sentByRole) {
     const [pending] = await pool.query(`
       SELECT s.id, s.name, s.phone, s.course, s.mode
       FROM students s
-      WHERE s.enroll_status = 'Active'
+      WHERE s.status = 'Active'
       AND (
         SELECT COUNT(*) FROM payments p 
         WHERE p.student_id = s.id AND p.status = 'pending'
@@ -22,7 +22,7 @@ async function sendReminders(sentBy, sentByRole) {
     const [overdue] = await pool.query(`
       SELECT s.id, s.name, s.phone, s.course, s.mode
       FROM students s
-      WHERE s.enroll_status = 'Active'
+      WHERE s.status = 'Active'
       AND (
         SELECT COUNT(*) FROM payments p 
         WHERE p.student_id = s.id AND p.status = 'overdue'
