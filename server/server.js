@@ -7,6 +7,7 @@ const { requireAuth } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/students');
 const dashboardRoutes = require('./routes/dashboard');
+const usersRoutes = require('./routes/users');
 const imageRoutes = require('./routes/images');
 const exportRoutes = require('./routes/export');
 
@@ -28,6 +29,7 @@ app.use('/uploads', requireAuth, express.static(path.join(__dirname, 'uploads'))
 app.use('/api/auth', authRoutes);
 app.use('/api/students', requireAuth, studentRoutes);
 app.use('/api/dashboard', requireAuth, dashboardRoutes);
+app.use('/api/users', requireAuth, usersRoutes);
 app.use('/api/images', requireAuth, imageRoutes);
 app.use('/api/export', requireAuth, exportRoutes);
 
