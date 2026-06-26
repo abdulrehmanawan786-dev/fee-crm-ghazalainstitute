@@ -322,7 +322,7 @@ function Dashboard({ onLogout }) {
 
       {modalOpen && <StudentModal initial={editingStudent} onSave={handleSaved} onClose={() => setModalOpen(false)} />}
       {detailStudent && <DetailDrawer student={detailStudent} onClose={() => setDetailStudent(null)} onChanged={handleDetailChanged} />}
-    </div>
+   {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />} </div>
   );
 }
 
