@@ -348,7 +348,7 @@ function Dashboard({ onLogout, role }) {
             }
           }} />
       )}
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} role={role} />}
     </div>
   );
 }
