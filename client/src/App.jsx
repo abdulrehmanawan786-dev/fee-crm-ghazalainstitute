@@ -5,6 +5,7 @@ import Login from './components/Login';
 import StudentTable from './components/StudentTable';
 import StudentModal from './components/StudentModal';
 import DetailDrawer from './components/DetailDrawer';
+import SettingsPanel from './components/SettingsPanel';
 import { COURSES, MODES, fmt, formatDate, todayStr, monthLabel, shiftMonth, shiftYear, COURSE_SHORT } from './helpers';
 
 export default function App() {
