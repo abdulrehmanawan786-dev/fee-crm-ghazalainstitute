@@ -8,11 +8,21 @@ import DetailDrawer from './components/DetailDrawer';
 import SettingsPanel from './components/SettingsPanel';
 import { COURSES, MODES, fmt, formatDate, todayStr, monthLabel, shiftMonth, shiftYear, COURSE_SHORT } from './helpers';
 
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
 export default function App() {
   const [username, setUsername] = useState(null);
   const [checking, setChecking] = useState(true);
 
+  function doLogout() {
+    setToken(null);
+    setUsername(null);
+  }
+
   useEffect(() => {
+    // We don't have a "whoami" endpoint, so just trust a stored token until an API
+    // call comes back 401 (handled globally below). This avoids an extra round trip
+    // on every page load.
     setUsername(getToken() ? 'admin' : null);
     setChecking(false);
     const onExpire = () => setUsername(null);
@@ -20,9 +30,26 @@ export default function App() {
     return () => window.removeEventListener('ghazala-auth-expired', onExpire);
   }, []);
 
+  // Session timeout: any click, keypress, or scroll resets a 30-minute timer.
+  // If nothing happens for 30 minutes while logged in, log out automatically.
+  useEffect(() => {
+    if (!username) return;
+    let timer = setTimeout(doLogout, IDLE_TIMEOUT_MS);
+    function reset() {
+      clearTimeout(timer);
+      timer = setTimeout(doLogout, IDLE_TIMEOUT_MS);
+    }
+    const events = ['click', 'keydown', 'scroll', 'mousemove'];
+    events.forEach(e => window.addEventListener(e, reset));
+    return () => {
+      clearTimeout(timer);
+      events.forEach(e => window.removeEventListener(e, reset));
+    };
+  }, [username]);
+
   if (checking) return null;
   if (!username) return <Login onLoggedIn={setUsername} />;
-  return <Dashboard onLogout={() => { setToken(null); setUsername(null); }} />;
+  return <Dashboard onLogout={doLogout} />;
 }
 
 function Dashboard({ onLogout }) {
