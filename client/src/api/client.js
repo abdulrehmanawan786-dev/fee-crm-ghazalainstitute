@@ -47,6 +47,10 @@ async function request(path, options = {}) {
 export const api = {
   login: (username, password) =>
     request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  forgotPassword: () =>
+    request('/auth/forgot-password', { method: 'POST' }),
+  resetPassword: (token, newPassword) =>
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
   changePassword: (currentPassword, newPassword) =>
     request('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
   loginHistory: () => request('/auth/login-history'),
