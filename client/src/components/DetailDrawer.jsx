@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Clock, AlertTriangle } from 'lucide-react';
+import { X, Check, Clock, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { fmt, formatDate, todayStr, netTotal, balance, findPayment, METHODS, STATUS_STYLE } from '../helpers';
 import { api } from '../api/client';
 import { Stamp } from './StudentTable';
 
-export default function DetailDrawer({ student, onClose, onChanged }) {
+// This is the full "student profile" view — registration details, enrollment status,
+// payment breakdown, and photos all in one place, with edit/delete actions available
+// directly here so the admin/agent doesn't need to go back to the table for routine work.
+export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDeleteRequest }) {
   const [methodFor, setMethodFor] = useState(null);
   const [images, setImages] = useState([]);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [viewerImage, setViewerImage] = useState(null);
   const total = netTotal(student);
   const bal = balance(student);
 
@@ -37,28 +41,52 @@ export default function DetailDrawer({ student, onClose, onChanged }) {
   const inst2 = findPayment(student, 'installment2');
   const lump = findPayment(student, 'lumpsum');
 
+  const infoRow = { display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #EFE9DA', fontSize: 13 };
+  const infoLabel = { color: '#6B6458' };
+  const infoValue = { fontWeight: 600, color: '#1B2A4A' };
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,42,74,0.45)', display: 'flex', justifyContent: 'flex-end', zIndex: 40 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', width: '100%', maxWidth: 420, height: '100%', overflowY: 'auto', padding: 24, borderLeft: '2px solid #1B2A4A' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', width: '100%', maxWidth: 520, height: '100%', overflowY: 'auto', padding: 24, borderLeft: '2px solid #1B2A4A' }}>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
           <div>
-            <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 22, margin: 0 }}>{student.name}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 24, margin: 0 }}>{student.name}</h2>
+              {student.status === 'Inactive' && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#6B6458', border: '1px solid #D8D0BC', borderRadius: 3, padding: '2px 6px', textTransform: 'uppercase' }}>Inactive</span>
+              )}
+            </div>
             <div style={{ color: '#6B6458', fontSize: 13, marginTop: 2 }}>
               {student.course} ({student.mode}) · {student.phone || 'no phone'}{student.slip_no ? ` · Slip #${student.slip_no}` : ''}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6458' }}><X size={20} /></button>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button onClick={() => onEdit(student)} title="Edit" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6458', padding: 4 }}><Pencil size={18} /></button>
+            <button onClick={() => onDeleteRequest(student.id)} title="Delete" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#B0432F', padding: 4 }}><Trash2 size={18} /></button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6458', padding: 4 }}><X size={20} /></button>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 16, margin: '16px 0', fontFamily: "'Courier New', monospace", fontSize: 13 }}>
+        <div style={{ display: 'flex', gap: 16, margin: '14px 0', fontFamily: "'Courier New', monospace", fontSize: 14 }}>
           <div>Total: <b>{fmt(total)}</b></div>
           <div style={{ color: bal > 0 ? '#9C6B26' : '#2F6F4E' }}>Balance: <b>{fmt(bal)}</b></div>
         </div>
 
+        <div style={{ background: '#FFFDFA', border: '1px solid #E3DCC9', borderRadius: 8, padding: '4px 14px', marginBottom: 18 }}>
+          <div style={infoRow}><span style={infoLabel}>Registration date</span><span style={infoValue}>{formatDate(student.reg_date)}</span></div>
+          <div style={infoRow}><span style={infoLabel}>Registration fee</span><span style={infoValue}>{fmt(student.registration_fee)}</span></div>
+          <div style={infoRow}><span style={infoLabel}>Course fee</span><span style={infoValue}>{fmt(student.course_fee)}</span></div>
+          <div style={infoRow}><span style={infoLabel}>Discount</span><span style={infoValue}>{fmt(student.discount)}</span></div>
+          <div style={infoRow}><span style={infoLabel}>Payment plan</span><span style={infoValue}>{student.payment_mode === 'lumpsum' ? 'Lumpsum' : 'Installments'}</span></div>
+          <div style={{ ...infoRow, borderBottom: 'none' }}><span style={infoLabel}>Remarks</span><span style={infoValue}>{student.remarks || 'Active'}</span></div>
+        </div>
+
         {imgLoaded && images.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
             {images.map(img => (
-              <img key={img.id} src={img.url} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #D8D0BC' }} />
+              <img key={img.id} src={img.url} alt="" onClick={() => setViewerImage(img.url)}
+                style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid #D8D0BC', cursor: 'pointer' }} />
             ))}
           </div>
         )}
@@ -91,6 +119,12 @@ export default function DetailDrawer({ student, onClose, onChanged }) {
           </>
         )}
       </div>
+
+      {viewerImage && (
+        <div onClick={() => setViewerImage(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: 24 }}>
+          <img src={viewerImage} alt="" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 8 }} />
+        </div>
+      )}
     </div>
   );
 }

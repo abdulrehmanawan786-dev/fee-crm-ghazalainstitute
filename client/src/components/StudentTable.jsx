@@ -64,6 +64,9 @@ export default function StudentTable({ students, selectedMonth, onRowClick, onEd
                 <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                   {s.name}
                   {!s.imageCount && <ImageOff size={12} style={{ color: '#C68A3F' }} />}
+                  {s.status === 'Inactive' && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#6B6458', border: '1px solid #D8D0BC', borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase' }}>Inactive</span>
+                  )}
                 </div>
                 {s.slip_no && <div style={{ fontSize: 11, color: '#6B6458' }}>Slip #{s.slip_no}</div>}
               </div>

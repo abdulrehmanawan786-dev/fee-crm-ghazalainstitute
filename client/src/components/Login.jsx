@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { api, setToken } from '../api/client';
+import { api, setToken, setRole } from '../api/client';
 
 export default function Login({ onLoggedIn }) {
   const [username, setUsername] = useState('');
@@ -12,9 +12,10 @@ export default function Login({ onLoggedIn }) {
     setError('');
     setLoading(true);
     try {
-      const { token, username: u } = await api.login(username.trim(), password);
+      const { token, username: u, role } = await api.login(username.trim(), password);
       setToken(token);
-      onLoggedIn(u);
+      setRole(role);
+      onLoggedIn(u, role);
     } catch (err) {
       setError(err.message);
     } finally {

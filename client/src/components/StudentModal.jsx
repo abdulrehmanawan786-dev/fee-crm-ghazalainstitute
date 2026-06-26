@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Camera } from 'lucide-react';
-import { COURSES, COURSE_FEES, MODES, REG_FEE_DEFAULT, fmt, formatDate, todayStr, findPayment } from '../helpers';
+import { COURSES, COURSE_FEES, MODES, ENROLL_STATUSES, REG_FEE_DEFAULT, fmt, formatDate, todayStr, findPayment } from '../helpers';
 import { api } from '../api/client';
 
 export default function StudentModal({ initial, onSave, onClose }) {
@@ -9,6 +9,7 @@ export default function StudentModal({ initial, onSave, onClose }) {
   const [phone, setPhone] = useState(initial?.phone || '');
   const [course, setCourse] = useState(initial?.course || COURSES[0]);
   const [mode, setMode] = useState(initial?.mode || 'Onsite');
+  const [status, setStatus] = useState(initial?.status || 'Active');
   const [registrationFee, setRegistrationFee] = useState(initial?.registration_fee ?? REG_FEE_DEFAULT);
   const [courseFee, setCourseFee] = useState(initial?.course_fee ?? COURSE_FEES[COURSES[0]]);
   const [regDate, setRegDate] = useState(initial?.reg_date || todayStr());
@@ -77,7 +78,7 @@ export default function StudentModal({ initial, onSave, onClose }) {
     setSaving(true);
     try {
       const payload = {
-        name: name.trim(), slipNo: slipNo.trim(), phone: phone.trim(), course, mode,
+        name: name.trim(), slipNo: slipNo.trim(), phone: phone.trim(), course, mode, status,
         registrationFee: Number(registrationFee) || 0, courseFee: Number(courseFee) || 0,
         regDate, discount: Number(discount) || 0, paymentMode,
         inst1Date, inst2Date, lumpsumDate, remarks,
@@ -132,6 +133,11 @@ export default function StudentModal({ initial, onSave, onClose }) {
           <label style={{ ...labelStyle, flex: 1 }}>Mode
             <select style={inputStyle} value={mode} onChange={e => setMode(e.target.value)}>
               {MODES.map(m => <option key={m}>{m}</option>)}
+            </select>
+          </label>
+          <label style={{ ...labelStyle, flex: 1 }}>Status
+            <select style={inputStyle} value={status} onChange={e => setStatus(e.target.value)}>
+              {ENROLL_STATUSES.map(s => <option key={s}>{s}</option>)}
             </select>
           </label>
         </div>
