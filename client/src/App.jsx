@@ -155,10 +155,8 @@ function Dashboard({ onLogout }) {
               <img src="/logo.png" alt="Ghazala Institute" style={{ height: 150, width: 'auto' }} />
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-                  <h1 style={{ fontFamily: "Georgia, 'Iowan Old Style', serif", fontSize: 28, fontWeight: 700, margin: 0 }}>Ghazala Institute</h1>
                   <span style={{ fontFamily: "Georgia, serif", fontSize: 15, fontStyle: 'italic', color: '#6B6458' }}>— Fee Ledger</span>
                 </div>
-                <p style={{ margin: '4px 0 0', color: '#6B6458', fontSize: 13 }}>German · IELTS · PTE · Spoken English</p>
               </div>
             </div>
           </div>
