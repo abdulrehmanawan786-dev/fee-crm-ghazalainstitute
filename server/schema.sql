@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS admins (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
+  role ENUM('admin','agent') NOT NULL DEFAULT 'admin',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS students (
   phone VARCHAR(50),
   course VARCHAR(100) NOT NULL,
   mode ENUM('Onsite','Online') NOT NULL DEFAULT 'Onsite',
+  status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
   course_fee INT NOT NULL DEFAULT 0,
   registration_fee INT NOT NULL DEFAULT 0,
   reg_date DATE NOT NULL,
@@ -57,6 +59,8 @@ CREATE TABLE IF NOT EXISTS student_images (
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
+
+-- Phase 1: records every login attempt (success and failure) for the Login History view.
 CREATE TABLE IF NOT EXISTS login_history (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL,
