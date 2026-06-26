@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings } from 'lucide-react';
-import { api, getToken, getRole, setToken, setRole } from './api/client';
+import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings, Bell } from 'lucide-react';import { api, getToken, getRole, setToken, setRole } from './api/client';
 import Login from './components/Login';
 import ResetPassword from './components/ResetPassword';
 import StudentTable from './components/StudentTable';
@@ -61,6 +60,8 @@ export default function App() {
 
 function Dashboard({ onLogout, role }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+const [reminderSending, setReminderSending] = useState(false);
+const [reminderMsg, setReminderMsg] = useState('');
   const [enrollStatusFilter, setEnrollStatusFilter] = useState('All');
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -163,7 +164,19 @@ function Dashboard({ onLogout, role }) {
     a.click();
     a.remove();
   }
-
+async function sendReminders() {
+    setReminderSending(true);
+    setReminderMsg('');
+    try {
+      const res = await api.sendReminders();
+      setReminderMsg(`✅ ${res.sent} reminders sent!`);
+    } catch (err) {
+      setReminderMsg(`❌ Error: ${err.message}`);
+    } finally {
+      setReminderSending(false);
+      setTimeout(() => setReminderMsg(''), 5000);
+    }
+  }
   const statCards = monthly ? [
     {
       key: 'students', label: 'Students this month', value: monthly.studentCount, color: '#1B2A4A', mono: false,
@@ -194,6 +207,10 @@ function Dashboard({ onLogout, role }) {
             <span style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 700, color: '#1B2A4A' }}>Fee Ledger</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
+           <button onClick={sendReminders} disabled={reminderSending} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#2F6F4E' }}>
+  <Bell size={14} /> {reminderSending ? 'Sending...' : 'Send Reminders'}
+</button>
+{reminderMsg && <span style={{ fontSize: 12, color: '#2F6F4E' }}>{reminderMsg}</span>}
             <button onClick={downloadCsv} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
               <Download size={14} /> Export CSV
             </button>
