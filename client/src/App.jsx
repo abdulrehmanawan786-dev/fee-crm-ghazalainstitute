@@ -7,7 +7,7 @@ import StudentModal from './components/StudentModal';
 import DetailDrawer from './components/DetailDrawer';
 import SettingsPanel from './components/SettingsPanel';
 import { COURSES, MODES, fmt, formatDate, todayStr, monthLabel, shiftMonth, shiftYear, COURSE_SHORT } from './helpers';
-
+import logoUrl from './Logo - Change - Copy.png';
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 export default function App() {
@@ -180,7 +180,7 @@ function Dashboard({ onLogout }) {
       <div style={{ borderBottom: '2px solid #1B2A4A', padding: '24px 20px 18px', background: '#F7F3EC' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/logo.png" alt="Ghazala Institute" style={{ height: 150, width: 'auto' }} />
+            <img src={logoUrl} alt="Ghazala Institute" style={{ height: 150, width: 'auto' }} />
           </div>
           <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
             <span style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 700, color: '#1B2A4A' }}>Fee Ledger</span>
@@ -189,10 +189,10 @@ function Dashboard({ onLogout }) {
             <button onClick={downloadCsv} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
               <Download size={14} /> Export CSV
             </button>
+         <button onClick={() => setSettingsOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
+              <Settings size={14} /> Settings
+            </button>
             <button onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, cursor: 'pointer', color: '#6B6458' }}>
-            <button onClick={() => setSettingsOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
-  <Settings size={14} /> Settings
-</button>
               <LogOut size={14} /> Log out
             </button>
           </div>
