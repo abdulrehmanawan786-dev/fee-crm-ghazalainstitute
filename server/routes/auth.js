@@ -58,10 +58,10 @@ router.post('/login', async (req, res) => {
 
     failedAttempts.delete(username);
     await logLogin(username, true, req);
-    const token = jwt.sign({ sub: admin.id, username: admin.username }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ sub: admin.id, username: admin.username, role: admin.role }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || '12h',
     });
-    res.json({ token, username: admin.username });
+    res.json({ token, username: admin.username, role: admin.role });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error. Please try again.' });

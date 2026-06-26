@@ -19,7 +19,7 @@ async function loadStudentWithPayments(studentId) {
 
 router.get('/', async (req, res) => {
   try {
-    const { month, search, course, mode, status, dateFrom, dateTo } = req.query;
+    const { month, search, course, mode, status, enrollStatus, dateFrom, dateTo } = req.query;
     let where = ['1=1'];
     let params = [];
 
@@ -41,6 +41,7 @@ router.get('/', async (req, res) => {
 
     if (course && course !== 'All') { where.push('s.course = ?'); params.push(course); }
     if (mode && mode !== 'All') { where.push('s.mode = ?'); params.push(mode); }
+    if (enrollStatus && enrollStatus !== 'All') { where.push('s.status = ?'); params.push(enrollStatus); }
 
     const [rows] = await pool.query(
       `SELECT s.*, COALESCE(img.c, 0) AS imageCount
@@ -121,9 +122,9 @@ router.post('/', async (req, res) => {
     await conn.beginTransaction();
 
     await conn.query(
-      `INSERT INTO students (id, name, slip_no, phone, course, mode, course_fee, registration_fee, reg_date, discount, payment_mode, remarks)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [id, d.name.trim(), d.slipNo || null, d.phone || null, d.course, d.mode || 'Onsite',
+      `INSERT INTO students (id, name, slip_no, phone, course, mode, status, course_fee, registration_fee, reg_date, discount, payment_mode, remarks)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [id, d.name.trim(), d.slipNo || null, d.phone || null, d.course, d.mode || 'Onsite', d.status || 'Active',
         studentRow.course_fee, studentRow.registration_fee, d.regDate, studentRow.discount,
         d.paymentMode || 'installment', d.remarks || null]
     );
@@ -178,9 +179,9 @@ router.put('/:id', async (req, res) => {
     await conn.beginTransaction();
 
     await conn.query(
-      `UPDATE students SET name=?, slip_no=?, phone=?, course=?, mode=?, course_fee=?, registration_fee=?, reg_date=?, discount=?, payment_mode=?, remarks=?
+      `UPDATE students SET name=?, slip_no=?, phone=?, course=?, mode=?, status=?, course_fee=?, registration_fee=?, reg_date=?, discount=?, payment_mode=?, remarks=?
        WHERE id=?`,
-      [d.name.trim(), d.slipNo || null, d.phone || null, d.course, d.mode || 'Onsite',
+      [d.name.trim(), d.slipNo || null, d.phone || null, d.course, d.mode || 'Onsite', d.status || 'Active',
         Number(d.courseFee) || 0, Number(d.registrationFee) || 0, d.regDate, Number(d.discount) || 0,
         d.paymentMode || 'installment', d.remarks || null, id]
     );
