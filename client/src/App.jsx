@@ -155,7 +155,7 @@ function Dashboard({ onLogout }) {
               <img src="/logo.png" alt="Ghazala Institute" style={{ height: 150, width: 'auto' }} />
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: "Georgia, serif", fontSize: 15, fontStyle: 'italic', color: '#6B6458' }}>— Fee Ledger</span>
+                  <span style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 700, color: '#1B2A4A' }}>Fee Ledger</span>
                 </div>
               </div>
             </div>
