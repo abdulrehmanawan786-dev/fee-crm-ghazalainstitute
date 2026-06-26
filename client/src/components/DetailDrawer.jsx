@@ -3,7 +3,7 @@ import { X, Check, Clock, AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { fmt, formatDate, todayStr, netTotal, balance, findPayment, METHODS, STATUS_STYLE } from '../helpers';
 import { api } from '../api/client';
 import { Stamp } from './StudentTable';
-
+import ReceiptView from './ReceiptView';
 // This is the full "student profile" view — registration details, enrollment status,
 // payment breakdown, and photos all in one place, with edit/delete actions available
 // directly here so the admin/agent doesn't need to go back to the table for routine work.
@@ -12,6 +12,7 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
   const [images, setImages] = useState([]);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [viewerImage, setViewerImage] = useState(null);
+  const [printingPayment, setPrintingPayment] = useState(null);
   const total = netTotal(student);
   const bal = balance(student);
 
@@ -96,8 +97,9 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
         </div>
         {reg && (
           <LineItem label="Registration" payment={reg}
-            onPay={() => setMethodFor('registration')} onUnmark={() => unmark('registration')}
-            showMethodPicker={methodFor === 'registration'} onPickMethod={m => pickMethod('registration', m)} />
+  onPay={() => setMethodFor('registration')} onUnmark={() => unmark('registration')}
+  onPrintReceipt={() => setPrintingPayment(reg)}
+  showMethodPicker={methodFor === 'registration'} onPickMethod={m => pickMethod('registration', m)} />
         )}
 
         <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '20px 0 8px', borderBottom: '1px solid #E3DCC9', paddingBottom: 4 }}>
@@ -105,17 +107,20 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
         </div>
         {student.payment_mode === 'lumpsum' && lump && (
           <LineItem label="Full payment" payment={lump}
-            onPay={() => setMethodFor('lumpsum')} onUnmark={() => unmark('lumpsum')}
-            showMethodPicker={methodFor === 'lumpsum'} onPickMethod={m => pickMethod('lumpsum', m)} />
+  onPay={() => setMethodFor('lumpsum')} onUnmark={() => unmark('lumpsum')}
+  onPrintReceipt={() => setPrintingPayment(lump)}
+  showMethodPicker={methodFor === 'lumpsum'} onPickMethod={m => pickMethod('lumpsum', m)} />
         )}
         {student.payment_mode !== 'lumpsum' && (
           <>
             {inst1 && <LineItem label="1st installment" payment={inst1}
-              onPay={() => setMethodFor('installment1')} onUnmark={() => unmark('installment1')}
-              showMethodPicker={methodFor === 'installment1'} onPickMethod={m => pickMethod('installment1', m)} />}
-            {inst2 && <LineItem label="2nd installment" payment={inst2}
-              onPay={() => setMethodFor('installment2')} onUnmark={() => unmark('installment2')}
-              showMethodPicker={methodFor === 'installment2'} onPickMethod={m => pickMethod('installment2', m)} />}
+  onPay={() => setMethodFor('installment1')} onUnmark={() => unmark('installment1')}
+  onPrintReceipt={() => setPrintingPayment(inst1)}
+  showMethodPicker={methodFor === 'installment1'} onPickMethod={m => pickMethod('installment1', m)} />}
+{inst2 && <LineItem label="2nd installment" payment={inst2}
+  onPay={() => setMethodFor('installment2')} onUnmark={() => unmark('installment2')}
+  onPrintReceipt={() => setPrintingPayment(inst2)}
+  showMethodPicker={methodFor === 'installment2'} onPickMethod={m => pickMethod('installment2', m)} />}
           </>
         )}
       </div>
@@ -125,11 +130,15 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
           <img src={viewerImage} alt="" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 8 }} />
         </div>
       )}
+
+      {printingPayment && (
+        <ReceiptView student={student} payment={printingPayment} onClose={() => setPrintingPayment(null)} />
+      )}
     </div>
   );
 }
 
-function LineItem({ label, payment, onPay, onUnmark, showMethodPicker, onPickMethod }) {
+function LineItem({ label, payment, onPay, onUnmark, onPrintReceipt, showMethodPicker, onPickMethod }) {
   const { amount, due_date, paid_date, method, was_overdue } = payment;
   const status = paid_date ? 'paid' : (due_date && due_date < todayStr() ? 'overdue' : 'pending');
   return (
@@ -160,9 +169,14 @@ function LineItem({ label, payment, onPay, onUnmark, showMethodPicker, onPickMet
         </div>
       )}
       {paid_date && (
-        <button onClick={onUnmark} style={{ marginTop: 6, background: 'none', border: 'none', color: '#B0432F', fontSize: 12, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-          Undo
-        </button>
+        <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button onClick={onPrintReceipt} style={{ background: 'none', border: '1px solid #D8D0BC', color: '#1B2A4A', fontSize: 12, cursor: 'pointer', borderRadius: 5, padding: '5px 10px', fontWeight: 600 }}>
+            Print receipt
+          </button>
+          <button onClick={onUnmark} style={{ background: 'none', border: 'none', color: '#B0432F', fontSize: 12, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+            Undo
+          </button>
+        </div>
       )}
     </div>
   );
