@@ -6,6 +6,7 @@ const path = require('path');
 const { requireAuth } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/students');
+const { router: reminderRoutes } = require('./routes/reminders');
 const dashboardRoutes = require('./routes/dashboard');
 const usersRoutes = require('./routes/users');
 const imageRoutes = require('./routes/images');
@@ -32,7 +33,7 @@ app.use('/api/dashboard', requireAuth, dashboardRoutes);
 app.use('/api/users', requireAuth, usersRoutes);
 app.use('/api/images', requireAuth, imageRoutes);
 app.use('/api/export', requireAuth, exportRoutes);
-
+app.use('/api/reminders', requireAuth, reminderRoutes);
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.use((err, req, res, next) => {
