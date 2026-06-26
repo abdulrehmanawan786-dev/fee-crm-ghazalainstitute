@@ -12,6 +12,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
+          port: 2222
           script: |
             cd /var/www/ghazala-fee-crm
             git pull origin main
