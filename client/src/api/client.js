@@ -50,6 +50,9 @@ export const api = {
   changePassword: (currentPassword, newPassword) =>
     request('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
   loginHistory: () => request('/auth/login-history'),
+  listUsers: () => request('/users'),
+  createUser: (username, password, role) => request('/users', { method: 'POST', body: JSON.stringify({ username, password, role }) }),
+  deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
 
   listStudents: (params) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
