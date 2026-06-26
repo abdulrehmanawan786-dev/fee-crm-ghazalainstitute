@@ -252,7 +252,10 @@ router.post('/:id/payments/:type/pay', async (req, res) => {
     if (!payment) return res.status(404).json({ error: 'Payment record not found.' });
 
     const wasOverdue = !!(payment.due_date && payment.due_date < today);
-    await pool.query('UPDATE payments SET paid_date=?, method=?, was_overdue=? WHERE id=?', [today, method || 'Cash', wasOverdue, payment.id]);
+    const [[{ maxNum }]] = await pool.query('SELECT COALESCE(MAX(receipt_number), 1000) AS maxNum FROM payments');
+    const receiptNumber = maxNum + 1;
+    await pool.query('UPDATE payments SET paid_date=?, method=?, was_overdue=?, receipt_number=? WHERE id=?',
+      [today, method || 'Cash', wasOverdue, receiptNumber, payment.id]);
     res.json(await loadStudentWithPayments(id));
   } catch (err) {
     console.error('Mark paid error:', err);
