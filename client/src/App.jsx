@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings } from 'lucide-react';
 import { api, getToken, getRole, setToken, setRole } from './api/client';
 import Login from './components/Login';
+import ResetPassword from './components/ResetPassword';
 import StudentTable from './components/StudentTable';
 import StudentModal from './components/StudentModal';
 import DetailDrawer from './components/DetailDrawer';
@@ -9,7 +10,7 @@ import SettingsPanel from './components/SettingsPanel';
 import { COURSES, MODES, ENROLL_STATUSES, fmt, formatDate, todayStr, monthLabel, shiftMonth, shiftYear, COURSE_SHORT } from './helpers';
 import logoUrl from './Logo - Change - Copy.png';
 
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 export default function App() {
   const [username, setUsername] = useState(null);
@@ -29,9 +30,6 @@ export default function App() {
   }
 
   useEffect(() => {
-    // We don't have a "whoami" endpoint, so just trust a stored token until an API
-    // call comes back 401 (handled globally below). This avoids an extra round trip
-    // on every page load.
     setUsername(getToken() ? 'admin' : null);
     setRoleState(getRole());
     setChecking(false);
@@ -40,8 +38,6 @@ export default function App() {
     return () => window.removeEventListener('ghazala-auth-expired', onExpire);
   }, []);
 
-  // Session timeout: any click, keypress, or scroll resets a 30-minute timer.
-  // If nothing happens for 30 minutes while logged in, log out automatically.
   useEffect(() => {
     if (!username) return;
     let timer = setTimeout(doLogout, IDLE_TIMEOUT_MS);
@@ -58,6 +54,7 @@ export default function App() {
   }, [username]);
 
   if (checking) return null;
+  if (window.location.pathname === '/reset-password') return <ResetPassword />;
   if (!username) return <Login onLoggedIn={handleLoggedIn} />;
   return <Dashboard onLogout={doLogout} role={role} />;
 }
@@ -79,7 +76,7 @@ function Dashboard({ onLogout, role }) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [detailStudent, setDetailStudent] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [drillDown, setDrillDown] = useState(null); // { title, students: [] }
+  const [drillDown, setDrillDown] = useState(null);
   const [monthly, setMonthly] = useState(null);
   const [overdueIds, setOverdueIds] = useState([]);
   const [pendingImageIds, setPendingImageIds] = useState([]);
@@ -207,7 +204,6 @@ function Dashboard({ onLogout, role }) {
               <LogOut size={14} /> Log out
             </button>
           </div>
-
         </div>
       </div>
 
