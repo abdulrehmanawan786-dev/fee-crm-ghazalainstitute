@@ -109,5 +109,54 @@ router.get('/login-history', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Could not load login history.' });
   }
 });
+// Forgot password — sends reset link via WhatsApp
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const [[admin]] = await pool.query('SELECT * FROM admins WHERE username = ?', ['admin']);
+    if (!admin) return res.status(404).json({ error: 'Admin not found.' });
 
+    const token = require('crypto').randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+
+    await pool.query(
+      'INSERT INTO password_reset_tokens (admin_id, token, expires_at) VALUES (?, ?, ?)',
+      [admin.id, token, expiresAt]
+    );
+
+    const resetLink = `${process.env.ALLOWED_ORIGIN}/reset-password?token=${token}`;
+    await sendWhatsAppMessage(
+      process.env.WHATSAPP_NUMBER,
+      `🔐 *Ghazala Fee CRM - Password Reset*\n\nReset link:\n${resetLink}\n\n⚠️ Yeh link 30 minute mein expire ho jayega.\n\nAgar aap ne request nahi ki to ignore karen.`
+    );
+
+    res.json({ success: true, message: 'Reset link WhatsApp par bhej diya gaya!' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Could not send reset link.' });
+  }
+});
+
+// Reset password with token
+router.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password required.' });
+  if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+
+  try {
+    const [[record]] = await pool.query(
+      'SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > NOW()',
+      [token]
+    );
+    if (!record) return res.status(400).json({ error: 'Invalid or expired reset link.' });
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await pool.query('UPDATE admins SET password_hash = ? WHERE id = ?', [newHash, record.admin_id]);
+    await pool.query('UPDATE password_reset_tokens SET used = 1 WHERE id = ?', [record.id]);
+
+    res.json({ success: true, message: 'Password successfully changed!' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Could not reset password.' });
+  }
+});
 module.exports = router;
