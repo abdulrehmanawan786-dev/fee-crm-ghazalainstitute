@@ -14,7 +14,7 @@ async function sendReminders(sentBy, sentByRole) {
       WHERE s.status = 'Active'
       AND (
         SELECT COUNT(*) FROM payments p 
-        WHERE p.student_id = s.id AND p.status = 'pending'
+        WHERE p.student_id = s.id AND p.paid_date IS NULL
       ) > 0
     `);
 
@@ -25,7 +25,7 @@ async function sendReminders(sentBy, sentByRole) {
       WHERE s.status = 'Active'
       AND (
         SELECT COUNT(*) FROM payments p 
-        WHERE p.student_id = s.id AND p.status = 'overdue'
+        WHERE p.student_id = s.id AND p.paid_date IS NULL AND p.due_date < CURDATE()
       ) > 0
     `);
 
