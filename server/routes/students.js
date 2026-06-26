@@ -6,7 +6,10 @@ const { netTotal, splitInstallments, lumpsumAmount } = require('../utils/calcula
 const router = express.Router();
 
 // ---- helpers ----
-
+async function nextReceiptNumber(conn) {
+  const [[{ maxNum }]] = await conn.query('SELECT COALESCE(MAX(receipt_number), 1000) AS maxNum FROM payments');
+  return maxNum + 1;
+}
 async function loadStudentWithPayments(studentId) {
   const [[student]] = await pool.query('SELECT * FROM students WHERE id = ?', [studentId]);
   if (!student) return null;
@@ -131,26 +134,30 @@ router.post('/', async (req, res) => {
 
     const fullStudent = { registration_fee: studentRow.registration_fee, course_fee: studentRow.course_fee, discount: studentRow.discount };
 
+    const regReceiptNumber = d.regPaid ? await nextReceiptNumber(conn) : null;
     await conn.query(
-      `INSERT INTO payments (student_id, type, amount, due_date, paid_date, method) VALUES (?,?,?,?,?,?)`,
-      [id, 'registration', studentRow.registration_fee, d.regDate, d.regPaid ? today : null, d.regPaid ? (d.regMethod || 'Cash') : null]
+      `INSERT INTO payments (student_id, type, amount, due_date, paid_date, method, receipt_number) VALUES (?,?,?,?,?,?,?)`,
+      [id, 'registration', studentRow.registration_fee, d.regDate, d.regPaid ? today : null, d.regPaid ? (d.regMethod || 'Cash') : null, regReceiptNumber]
     );
 
     if (d.paymentMode === 'lumpsum') {
       const amount = lumpsumAmount(fullStudent);
+      const lumpReceiptNumber = d.lumpsumPaid ? await nextReceiptNumber(conn) : null;
       await conn.query(
-        `INSERT INTO payments (student_id, type, amount, due_date, paid_date, method) VALUES (?,?,?,?,?,?)`,
-        [id, 'lumpsum', amount, d.lumpsumDate, d.lumpsumPaid ? today : null, d.lumpsumPaid ? (d.lumpsumMethod || 'Cash') : null]
+        `INSERT INTO payments (student_id, type, amount, due_date, paid_date, method, receipt_number) VALUES (?,?,?,?,?,?,?)`,
+        [id, 'lumpsum', amount, d.lumpsumDate, d.lumpsumPaid ? today : null, d.lumpsumPaid ? (d.lumpsumMethod || 'Cash') : null, lumpReceiptNumber]
       );
     } else {
       const { inst1, inst2 } = splitInstallments(fullStudent);
+      const inst1ReceiptNumber = d.inst1Paid ? await nextReceiptNumber(conn) : null;
       await conn.query(
-        `INSERT INTO payments (student_id, type, amount, due_date, paid_date, method) VALUES (?,?,?,?,?,?)`,
-        [id, 'installment1', inst1, d.inst1Date, d.inst1Paid ? today : null, d.inst1Paid ? (d.inst1Method || 'Cash') : null]
+        `INSERT INTO payments (student_id, type, amount, due_date, paid_date, method, receipt_number) VALUES (?,?,?,?,?,?,?)`,
+        [id, 'installment1', inst1, d.inst1Date, d.inst1Paid ? today : null, d.inst1Paid ? (d.inst1Method || 'Cash') : null, inst1ReceiptNumber]
       );
+      const inst2ReceiptNumber = d.inst2Paid ? await nextReceiptNumber(conn) : null;
       await conn.query(
-        `INSERT INTO payments (student_id, type, amount, due_date, paid_date, method) VALUES (?,?,?,?,?,?)`,
-        [id, 'installment2', inst2, d.inst2Date, d.inst2Paid ? today : null, d.inst2Paid ? (d.inst2Method || 'Cash') : null]
+        `INSERT INTO payments (student_id, type, amount, due_date, paid_date, method, receipt_number) VALUES (?,?,?,?,?,?,?)`,
+        [id, 'installment2', inst2, d.inst2Date, d.inst2Paid ? today : null, d.inst2Paid ? (d.inst2Method || 'Cash') : null, inst2ReceiptNumber]
       );
     }
 
