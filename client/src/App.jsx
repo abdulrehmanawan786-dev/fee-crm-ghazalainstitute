@@ -53,6 +53,7 @@ export default function App() {
 }
 
 function Dashboard({ onLogout }) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -189,6 +190,9 @@ function Dashboard({ onLogout }) {
               <Download size={14} /> Export CSV
             </button>
             <button onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, cursor: 'pointer', color: '#6B6458' }}>
+            <button onClick={() => setSettingsOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
+  <Settings size={14} /> Settings
+</button>
               <LogOut size={14} /> Log out
             </button>
           </div>
