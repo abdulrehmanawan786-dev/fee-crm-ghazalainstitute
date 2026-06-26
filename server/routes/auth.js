@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -11,6 +12,22 @@ const router = express.Router();
 const failedAttempts = new Map(); // username -> { count, lockedUntil }
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
+
+function clientIp(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  return (fwd ? fwd.split(',')[0].trim() : req.socket.remoteAddress) || 'unknown';
+}
+
+async function logLogin(username, success, req) {
+  try {
+    await pool.query(
+      'INSERT INTO login_history (username, success, ip_address, user_agent) VALUES (?,?,?,?)',
+      [username, success, clientIp(req), (req.headers['user-agent'] || '').slice(0, 255)]
+    );
+  } catch (err) {
+    console.error('Could not log login attempt:', err.message);
+  }
+}
 
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
@@ -35,10 +52,12 @@ router.post('/login', async (req, res) => {
         count: next,
         lockedUntil: next >= MAX_ATTEMPTS ? Date.now() + LOCKOUT_MS : null,
       });
+      await logLogin(username, false, req);
       return res.status(401).json({ error: 'Invalid username or password.' });
     }
 
     failedAttempts.delete(username);
+    await logLogin(username, true, req);
     const token = jwt.sign({ sub: admin.id, username: admin.username }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || '12h',
     });
@@ -46,6 +65,46 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error. Please try again.' });
+  }
+});
+
+// Change your own password. Requires the current password to confirm it's really you.
+router.post('/change-password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current and new password are required.' });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'New password must be at least 8 characters.' });
+  }
+
+  try {
+    const [[admin]] = await pool.query('SELECT * FROM admins WHERE id = ?', [req.admin.sub]);
+    if (!admin) return res.status(404).json({ error: 'Account not found.' });
+
+    const valid = await bcrypt.compare(currentPassword, admin.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Current password is incorrect.' });
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await pool.query('UPDATE admins SET password_hash = ? WHERE id = ?', [newHash, admin.id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'Could not change password.' });
+  }
+});
+
+// Last 50 login attempts for the currently logged-in username.
+router.get('/login-history', requireAuth, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT username, success, ip_address, user_agent, created_at FROM login_history WHERE username = ? ORDER BY created_at DESC LIMIT 50',
+      [req.admin.username]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Login history error:', err);
+    res.status(500).json({ error: 'Could not load login history.' });
   }
 });
 
