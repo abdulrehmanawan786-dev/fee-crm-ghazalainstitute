@@ -152,7 +152,7 @@ function Dashboard({ onLogout }) {
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <img src="/logo.png" alt="Ghazala Institute" style={{ height: 70, width: 'auto' }} />
+              <img src="/logo.png" alt="Ghazala Institute" style={{ height: 100, width: 'auto' }} />
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                   <h1 style={{ fontFamily: "Georgia, 'Iowan Old Style', serif", fontSize: 28, fontWeight: 700, margin: 0 }}>Ghazala Institute</h1>
