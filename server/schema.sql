@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS payments (
   paid_date DATE DEFAULT NULL,
   method VARCHAR(50) DEFAULT NULL,
   was_overdue BOOLEAN NOT NULL DEFAULT FALSE,
+  receipt_number INT DEFAULT NULL,
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   INDEX idx_due_date (due_date),
   INDEX idx_paid_date (paid_date),
