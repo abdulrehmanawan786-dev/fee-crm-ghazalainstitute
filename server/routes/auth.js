@@ -1,3 +1,4 @@
+const { sendWhatsAppMessage } = require('../utils/whatsapp');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -58,6 +59,7 @@ router.post('/login', async (req, res) => {
 
     failedAttempts.delete(username);
     await logLogin(username, true, req);
+    await sendWhatsAppMessage(process.env.WHATSAPP_NUMBER, `🔐 *Ghazala Fee CRM Login Alert*\n\nUsername: ${username}\nTime: ${new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' })}\nIP: ${clientIp(req)}\n\nAgar yeh aap nahi thay to foran password change karen.`);
     const token = jwt.sign({ sub: admin.id, username: admin.username, role: admin.role }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || '12h',
     });
