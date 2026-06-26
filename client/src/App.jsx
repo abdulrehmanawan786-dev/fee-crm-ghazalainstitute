@@ -1,22 +1,31 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings } from 'lucide-react';
-import { api, getToken, setToken } from './api/client';
+import { api, getToken, getRole, setToken, setRole } from './api/client';
 import Login from './components/Login';
 import StudentTable from './components/StudentTable';
 import StudentModal from './components/StudentModal';
 import DetailDrawer from './components/DetailDrawer';
 import SettingsPanel from './components/SettingsPanel';
-import { COURSES, MODES, fmt, formatDate, todayStr, monthLabel, shiftMonth, shiftYear, COURSE_SHORT } from './helpers';
+import { COURSES, MODES, ENROLL_STATUSES, fmt, formatDate, todayStr, monthLabel, shiftMonth, shiftYear, COURSE_SHORT } from './helpers';
 import logoUrl from './Logo - Change - Copy.png';
+
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 export default function App() {
   const [username, setUsername] = useState(null);
+  const [role, setRoleState] = useState(null);
   const [checking, setChecking] = useState(true);
 
   function doLogout() {
     setToken(null);
+    setRole(null);
     setUsername(null);
+    setRoleState(null);
+  }
+
+  function handleLoggedIn(u, r) {
+    setUsername(u);
+    setRoleState(r);
   }
 
   useEffect(() => {
@@ -24,8 +33,9 @@ export default function App() {
     // call comes back 401 (handled globally below). This avoids an extra round trip
     // on every page load.
     setUsername(getToken() ? 'admin' : null);
+    setRoleState(getRole());
     setChecking(false);
-    const onExpire = () => setUsername(null);
+    const onExpire = () => { setUsername(null); setRoleState(null); };
     window.addEventListener('ghazala-auth-expired', onExpire);
     return () => window.removeEventListener('ghazala-auth-expired', onExpire);
   }, []);
@@ -48,12 +58,13 @@ export default function App() {
   }, [username]);
 
   if (checking) return null;
-  if (!username) return <Login onLoggedIn={setUsername} />;
-  return <Dashboard onLogout={doLogout} />;
+  if (!username) return <Login onLoggedIn={handleLoggedIn} />;
+  return <Dashboard onLogout={doLogout} role={role} />;
 }
 
-function Dashboard({ onLogout }) {
+function Dashboard({ onLogout, role }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [enrollStatusFilter, setEnrollStatusFilter] = useState('All');
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -68,7 +79,7 @@ function Dashboard({ onLogout }) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [detailStudent, setDetailStudent] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [drillDown, setDrillDown] = useState(null);
+  const [drillDown, setDrillDown] = useState(null); // { title, students: [] }
   const [monthly, setMonthly] = useState(null);
   const [overdueIds, setOverdueIds] = useState([]);
   const [pendingImageIds, setPendingImageIds] = useState([]);
@@ -77,7 +88,7 @@ function Dashboard({ onLogout }) {
     setLoading(true);
     setLoadError('');
     try {
-      const params = { course: courseFilter, mode: modeFilter, status: statusFilter };
+      const params = { course: courseFilter, mode: modeFilter, status: statusFilter, enrollStatus: enrollStatusFilter };
       if (search.trim()) params.search = search.trim();
       if (dateFrom && dateTo) { params.dateFrom = dateFrom; params.dateTo = dateTo; }
       else if (!search.trim()) params.month = selectedMonth;
@@ -88,7 +99,7 @@ function Dashboard({ onLogout }) {
     } finally {
       setLoading(false);
     }
-  }, [search, courseFilter, modeFilter, statusFilter, dateFrom, dateTo, selectedMonth]);
+  }, [search, courseFilter, modeFilter, statusFilter, enrollStatusFilter, dateFrom, dateTo, selectedMonth]);
 
   const refreshDashboard = useCallback(async () => {
     try {
@@ -189,13 +200,14 @@ function Dashboard({ onLogout }) {
             <button onClick={downloadCsv} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
               <Download size={14} /> Export CSV
             </button>
-         <button onClick={() => setSettingsOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
+            <button onClick={() => setSettingsOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
               <Settings size={14} /> Settings
             </button>
             <button onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, cursor: 'pointer', color: '#6B6458' }}>
               <LogOut size={14} /> Log out
             </button>
           </div>
+
         </div>
       </div>
 
@@ -237,24 +249,26 @@ function Dashboard({ onLogout }) {
           )}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }} className="gl-stats">
-          {statCards.map(c => (
-            <button key={c.key} onClick={c.onClick} style={{ background: '#FFFDFA', border: '1px solid #E3DCC9', borderRadius: 6, padding: '14px 16px', textAlign: 'left', cursor: 'pointer', font: 'inherit' }}>
-              <div style={{ fontSize: 11, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{c.label}</div>
-              <div style={{ fontFamily: c.mono ? "'Courier New', monospace" : 'inherit', fontSize: 22, fontWeight: 700, color: c.color }}>{c.value}</div>
-              {c.sub && <div style={{ fontSize: 11, color: '#6B6458', marginTop: 2 }}>{c.sub}</div>}
-              {c.breakdown && Object.keys(c.breakdown).length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                  {Object.entries(c.breakdown).map(([course, count]) => (
-                    <span key={course} onClick={e => { e.stopPropagation(); showCourseDrillDown(course); }} style={{
-                      fontSize: 11, background: '#F7F3EC', border: '1px solid #E3DCC9', borderRadius: 4, padding: '2px 7px', color: '#6B6458', fontFamily: "'Courier New', monospace", cursor: 'pointer',
-                    }}>{COURSE_SHORT[course] || course} · {count}</span>
-                  ))}
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
+        {role !== 'agent' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }} className="gl-stats">
+            {statCards.map(c => (
+              <button key={c.key} onClick={c.onClick} style={{ background: '#FFFDFA', border: '1px solid #E3DCC9', borderRadius: 6, padding: '14px 16px', textAlign: 'left', cursor: 'pointer', font: 'inherit' }}>
+                <div style={{ fontSize: 11, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{c.label}</div>
+                <div style={{ fontFamily: c.mono ? "'Courier New', monospace" : 'inherit', fontSize: 22, fontWeight: 700, color: c.color }}>{c.value}</div>
+                {c.sub && <div style={{ fontSize: 11, color: '#6B6458', marginTop: 2 }}>{c.sub}</div>}
+                {c.breakdown && Object.keys(c.breakdown).length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                    {Object.entries(c.breakdown).map(([course, count]) => (
+                      <span key={course} onClick={e => { e.stopPropagation(); showCourseDrillDown(course); }} style={{
+                        fontSize: 11, background: '#F7F3EC', border: '1px solid #E3DCC9', borderRadius: 4, padding: '2px 7px', color: '#6B6458', fontFamily: "'Courier New', monospace", cursor: 'pointer',
+                      }}>{COURSE_SHORT[course] || course} · {count}</span>
+                    ))}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
 
         {!drillDown && (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12, fontSize: 13 }}>
@@ -301,6 +315,10 @@ function Dashboard({ onLogout }) {
                 <option value="drop">Drop</option>
                 <option value="refund">Refund</option>
               </select>
+              <select value={enrollStatusFilter} onChange={e => setEnrollStatusFilter(e.target.value)} style={selectStyle}>
+                <option value="All">Active + Inactive</option>
+                {ENROLL_STATUSES.map(s => <option key={s}>{s}</option>)}
+              </select>
               <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1B2A4A', color: '#F7F3EC', border: 'none', borderRadius: 6, padding: '9px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                 <Plus size={15} /> Add student
               </button>
@@ -321,8 +339,17 @@ function Dashboard({ onLogout }) {
       </div>
 
       {modalOpen && <StudentModal initial={editingStudent} onSave={handleSaved} onClose={() => setModalOpen(false)} />}
-      {detailStudent && <DetailDrawer student={detailStudent} onClose={() => setDetailStudent(null)} onChanged={handleDetailChanged} />}
-   {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />} </div>
+      {detailStudent && (
+        <DetailDrawer student={detailStudent} onClose={() => setDetailStudent(null)} onChanged={handleDetailChanged}
+          onEdit={s => { setDetailStudent(null); openEdit(s); }}
+          onDeleteRequest={async id => {
+            if (window.confirm(`Delete ${detailStudent.name}'s record? This cannot be undone.`)) {
+              await handleDelete(id);
+            }
+          }} />
+      )}
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+    </div>
   );
 }
 

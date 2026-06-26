@@ -9,6 +9,7 @@ export const COURSE_SHORT = {
 };
 export const METHODS = ['Cash', 'Bank Transfer', 'JazzCash', 'EasyPaisa', 'Card'];
 export const MODES = ['Onsite', 'Online'];
+export const ENROLL_STATUSES = ['Active', 'Inactive'];
 export const REG_FEE_DEFAULT = 2000;
 
 export function fmt(n) { return 'Rs ' + Number(n || 0).toLocaleString('en-PK'); }
