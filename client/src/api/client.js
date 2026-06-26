@@ -51,6 +51,9 @@ export const api = {
     request('/auth/forgot-password', { method: 'POST' }),
   resetPassword: (token, newPassword) =>
     request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
+  sendReminders: () => request('/reminders/send', { method: 'POST' }),
+  reminderLogs: () => request('/reminders/logs'),
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
   changePassword: (currentPassword, newPassword) =>
     request('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
   loginHistory: () => request('/auth/login-history'),
