@@ -52,6 +52,18 @@ export const api = {
   listUsers: () => request('/users'),
   createUser: (username, password, role) => request('/users', { method: 'POST', body: JSON.stringify({ username, password, role }) }),
   deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+  courseWiseReport: (params) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
+    return request(`/reports/course-wise?${qs}`);
+  },
+  comparisonReport: (params) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
+    return request(`/reports/comparison?${qs}`);
+  },
+  incomeReport: (params) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
+    return request(`/reports/income?${qs}`);
+  },
   listStudents: (params) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
     return request(`/students?${qs}`);
