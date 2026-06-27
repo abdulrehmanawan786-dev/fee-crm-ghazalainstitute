@@ -73,7 +73,7 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,42,74,0.45)', display: 'flex', justifyContent: 'flex-end', zIndex: 40 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', width: '100%', maxWidth: 520, height: '100%', overflowY: 'auto', padding: 24, paddingBottom: 200, borderLeft: '2px solid #1B2A4A' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', width: '100%', maxWidth: 520, height: '100%', overflowY: 'auto', padding: 24, paddingBottom: 40, borderLeft: '2px solid #1B2A4A' }}>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
           <div>
@@ -159,7 +159,7 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
 
         {/* Reminder History */}
         {reminderLogs.length > 0 && (
-          <div style={{ marginTop: 24 }}>
+          <div style={{ marginTop: 24, paddingBottom: 40 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, borderBottom: '1px solid #E3DCC9', paddingBottom: 4 }}>
               Reminder History · Total {reminderLogs.length} sent
             </div>
