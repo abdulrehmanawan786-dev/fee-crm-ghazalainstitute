@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings, Bell, X } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings, Bell, X, BarChart3 } from 'lucide-react';
 import { api, getToken, getRole, setToken, setRole } from './api/client';
 import Login from './components/Login';
 import ResetPassword from './components/ResetPassword';
@@ -7,6 +7,7 @@ import StudentTable from './components/StudentTable';
 import StudentModal from './components/StudentModal';
 import DetailDrawer from './components/DetailDrawer';
 import SettingsPanel from './components/SettingsPanel';
+import ReportsPage from './components/ReportsPage';
 import { COURSES, MODES, ENROLL_STATUSES, fmt, formatDate, todayStr, monthLabel, shiftMonth, shiftYear, COURSE_SHORT } from './helpers';
 import logoUrl from './Logo - Change - Copy.png';
 
@@ -61,6 +62,7 @@ export default function App() {
 
 function Dashboard({ onLogout, role }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showReports, setShowReports] = useState(false);
 const [reminderSending, setReminderSending] = useState(false);
 const [reminderMsg, setReminderMsg] = useState('');
   const [enrollStatusFilter, setEnrollStatusFilter] = useState('All');
@@ -219,6 +221,11 @@ async function sendReminders() {
     : `Students registered in ${monthLabel(selectedMonth)}`;
 
   return (
+    if (showReports) {
+    return <ReportsPage onBack={() => setShowReports(false)} />;
+  }
+
+  return (
     <div style={{ minHeight: '100vh', background: '#F7F3EC', fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", color: '#1B2A4A', paddingBottom: 60 }}>
       <div style={{ borderBottom: '2px solid #1B2A4A', padding: '24px 20px 18px', background: '#F7F3EC' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
@@ -233,6 +240,9 @@ async function sendReminders() {
 <button onClick={() => setReminderLogsOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B6458' }}>
   <Bell size={14} /> Reminder Logs
 </button>
+            <button onClick={() => setShowReports(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
+              <BarChart3 size={14} /> Reports
+            </button>
             <button onClick={downloadCsv} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
               <Download size={14} /> Export CSV
             </button>
