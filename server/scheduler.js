@@ -6,13 +6,16 @@ const { sendWhatsAppMessage } = require('./utils/whatsapp');
 cron.schedule('0 13 * * *', async () => {
   console.log('Running daily fee reminders...');
   try {
-    // Due today
+    // Due today — payments.paid_date IS NULL means unpaid; there is no stored
+    // "status" column on payments (paid/pending/overdue is always computed from
+    // paid_date/due_date), and the students column is "status", not "enroll_status".
     const [dueToday] = await pool.query(`
       SELECT s.id, s.name, s.phone, s.course, s.mode, p.due_date
       FROM students s
       JOIN payments p ON p.student_id = s.id
-      WHERE s.enroll_status = 'Active'
-      AND p.status = 'pending'
+      WHERE s.status = 'Active'
+      AND s.remarks IS NULL
+      AND p.paid_date IS NULL
       AND DATE(p.due_date) = CURDATE()
     `);
 
@@ -32,8 +35,9 @@ cron.schedule('0 13 * * *', async () => {
       SELECT s.id, s.name, s.phone, s.course, s.mode, p.due_date
       FROM students s
       JOIN payments p ON p.student_id = s.id
-      WHERE s.enroll_status = 'Active'
-      AND p.status = 'pending'
+      WHERE s.status = 'Active'
+      AND s.remarks IS NULL
+      AND p.paid_date IS NULL
       AND DATE(p.due_date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
     `);
 
@@ -53,8 +57,10 @@ cron.schedule('0 13 * * *', async () => {
       SELECT s.id, s.name, s.phone, s.course, s.mode, p.due_date
       FROM students s
       JOIN payments p ON p.student_id = s.id
-      WHERE s.enroll_status = 'Active'
-      AND p.status = 'overdue'
+      WHERE s.status = 'Active'
+      AND s.remarks IS NULL
+      AND p.paid_date IS NULL
+      AND DATE(p.due_date) < CURDATE()
     `);
 
     for (const student of overdue) {
