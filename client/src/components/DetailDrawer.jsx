@@ -73,7 +73,7 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,42,74,0.45)', display: 'flex', justifyContent: 'flex-end', zIndex: 40 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', width: '100%', maxWidth: 520, height: '100%', overflowY: 'auto', padding: 24, paddingBottom: 80, borderLeft: '2px solid #1B2A4A' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', width: '100%', maxWidth: 520, height: '100%', overflowY: 'auto', padding: 24, paddingBottom: 200, borderLeft: '2px solid #1B2A4A' }}>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
           <div>
