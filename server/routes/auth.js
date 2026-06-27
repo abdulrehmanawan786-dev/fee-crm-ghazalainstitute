@@ -1,4 +1,5 @@
-const { sendWhatsAppMessage } = require('../utils/whatsapp');
+cat > /var/www/ghazala-fee-crm/server/routes/auth.js << 'EOF'
+// const { sendWhatsAppMessage } = require('../utils/whatsapp');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -7,10 +8,7 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Simple in-memory brute-force guard: 5 failed attempts per username locks it out
-// for 15 minutes. Resets on server restart — fine for a single-admin internal tool,
-// but if you need it to survive restarts, move this into a database table instead.
-const failedAttempts = new Map(); // username -> { count, lockedUntil }
+const failedAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
 
@@ -59,7 +57,7 @@ router.post('/login', async (req, res) => {
 
     failedAttempts.delete(username);
     await logLogin(username, true, req);
-    await sendWhatsAppMessage(process.env.WHATSAPP_NUMBER, `🔐 *Ghazala Fee CRM Login Alert*\n\nUsername: ${username}\nTime: ${new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' })}\nIP: ${clientIp(req)}\n\nAgar yeh aap nahi thay to foran password change karen.`);
+    // await sendWhatsAppMessage(process.env.WHATSAPP_NUMBER, `Login alert`);
     const token = jwt.sign({ sub: admin.id, username: admin.username, role: admin.role }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || '12h',
     });
@@ -70,7 +68,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Change your own password. Requires the current password to confirm it's really you.
 router.post('/change-password', requireAuth, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) {
@@ -96,7 +93,6 @@ router.post('/change-password', requireAuth, async (req, res) => {
   }
 });
 
-// Last 50 login attempts for the currently logged-in username.
 router.get('/login-history', requireAuth, async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -109,14 +105,14 @@ router.get('/login-history', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Could not load login history.' });
   }
 });
-// Forgot password — sends reset link via WhatsApp
+
 router.post('/forgot-password', async (req, res) => {
   try {
     const [[admin]] = await pool.query('SELECT * FROM admins WHERE username = ?', ['admin']);
     if (!admin) return res.status(404).json({ error: 'Admin not found.' });
 
     const token = require('crypto').randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
     await pool.query(
       'INSERT INTO password_reset_tokens (admin_id, token, expires_at) VALUES (?, ?, ?)',
@@ -124,10 +120,7 @@ router.post('/forgot-password', async (req, res) => {
     );
 
     const resetLink = `${process.env.ALLOWED_ORIGIN}/reset-password?token=${token}`;
-    await sendWhatsAppMessage(
-      process.env.WHATSAPP_NUMBER,
-      `🔐 *Ghazala Fee CRM - Password Reset*\n\nReset link:\n${resetLink}\n\n⚠️ Yeh link 30 minute mein expire ho jayega.\n\nAgar aap ne request nahi ki to ignore karen.`
-    );
+    // await sendWhatsAppMessage(process.env.WHATSAPP_NUMBER, `Reset link: ${resetLink}`);
 
     res.json({ success: true, message: 'Reset link WhatsApp par bhej diya gaya!' });
   } catch (err) {
@@ -136,7 +129,6 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-// Reset password with token
 router.post('/reset-password', async (req, res) => {
   const { token, newPassword } = req.body;
   if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password required.' });
@@ -159,4 +151,6 @@ router.post('/reset-password', async (req, res) => {
     res.status(500).json({ error: 'Could not reset password.' });
   }
 });
+
 module.exports = router;
+EOF
