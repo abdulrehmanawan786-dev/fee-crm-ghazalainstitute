@@ -159,7 +159,7 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
 
         {/* Reminder History */}
         {reminderLogs.length > 0 && (
-          <div style={{ marginTop: 24 }}>
+          <div style={{ marginTop: 24, maxHeight: 300, overflowY: 'auto' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, borderBottom: '1px solid #E3DCC9', paddingBottom: 4 }}>
               Reminder History · Total {reminderLogs.length} sent
             </div>
