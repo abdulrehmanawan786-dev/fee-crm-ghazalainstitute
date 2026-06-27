@@ -81,7 +81,7 @@ const [reminderMsg, setReminderMsg] = useState('');
   const [monthly, setMonthly] = useState(null);
   const [overdueIds, setOverdueIds] = useState([]);
   const [pendingImageIds, setPendingImageIds] = useState([]);
-
+const [reminderLogsOpen, setReminderLogsOpen] = useState(false);
   const refreshList = useCallback(async () => {
     setLoading(true);
     setLoadError('');
@@ -114,7 +114,19 @@ const [reminderMsg, setReminderMsg] = useState('');
 
   useEffect(() => { refreshList(); }, [refreshList]);
   useEffect(() => { refreshDashboard(); }, [refreshDashboard]);
-
+useEffect(() => {
+    function handleEsc(e) {
+      if (e.key === 'Escape') {
+        if (drillDown) { setDrillDown(null); return; }
+        if (detailStudent) { setDetailStudent(null); return; }
+        if (modalOpen) { setModalOpen(false); return; }
+        if (settingsOpen) { setSettingsOpen(false); return; }
+        if (reminderLogsOpen) { setReminderLogsOpen(false); return; }
+      }
+    }
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [drillDown, detailStudent, modalOpen, settingsOpen, reminderLogsOpen]);
   function openAdd() { setEditingStudent(null); setModalOpen(true); }
   function openEdit(student) { setEditingStudent(student); setModalOpen(true); setDrillDown(null); }
   async function openEditById(id) {
@@ -164,6 +176,15 @@ const [reminderMsg, setReminderMsg] = useState('');
     a.click();
     a.remove();
   }
+  function clearFilters() {
+    setSearch('');
+    setCourseFilter('All');
+    setModeFilter('All');
+    setStatusFilter('All');
+    setEnrollStatusFilter('All');
+    setDateFrom('');
+    setDateTo('');
+  }
 async function sendReminders() {
     setReminderSending(true);
     setReminderMsg('');
@@ -211,6 +232,9 @@ async function sendReminders() {
   <Bell size={14} /> {reminderSending ? 'Sending...' : 'Send Reminders'}
 </button>
 {reminderMsg && <span style={{ fontSize: 12, color: '#2F6F4E' }}>{reminderMsg}</span>}
+<button onClick={() => setReminderLogsOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B6458' }}>
+  <Bell size={14} /> Reminder Logs
+</button>
             <button onClick={downloadCsv} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1B2A4A' }}>
               <Download size={14} /> Export CSV
             </button>
@@ -332,6 +356,9 @@ async function sendReminders() {
                 <option value="All">Active + Inactive</option>
                 {ENROLL_STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
+              <button onClick={clearFilters} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '9px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#B0432F' }}>
+  Clear filters
+</button>
               <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1B2A4A', color: '#F7F3EC', border: 'none', borderRadius: 6, padding: '9px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                 <Plus size={15} /> Add student
               </button>
@@ -362,10 +389,59 @@ async function sendReminders() {
           }} />
       )}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} role={role} />}
+      {reminderLogsOpen && <ReminderLogsModal onClose={() => setReminderLogsOpen(false)} />}
     </div>
   );
 }
+function ReminderLogsModal({ onClose }) {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    api.reminderLogs().then(data => { setLogs(data); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    function handleEsc(e) { if (e.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  const grouped = {};
+  logs.forEach(log => {
+    const date = log.created_at ? log.created_at.slice(0, 10) : 'Unknown';
+    if (!grouped[date]) grouped[date] = [];
+    grouped[date].push(log);
+  });
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,42,74,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 60 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', borderRadius: 10, padding: 24, width: '100%', maxWidth: 600, maxHeight: '85vh', overflowY: 'auto', border: '1px solid #1B2A4A' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 20, margin: 0 }}>Reminder Logs</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6458' }}><X size={18} /></button>
+        </div>
+
+        {loading && <div style={{ color: '#6B6458', fontSize: 13 }}>Loading…</div>}
+        {!loading && logs.length === 0 && <div style={{ color: '#6B6458', fontSize: 13 }}>No reminders sent yet.</div>}
+
+        {Object.entries(grouped).map(([date, dayLogs]) => (
+          <div key={date} style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#1B2A4A', marginBottom: 6, borderBottom: '1px solid #E3DCC9', paddingBottom: 4 }}>
+              📅 {date} — {dayLogs.length} reminder{dayLogs.length > 1 ? 's' : ''} sent
+            </div>
+            {dayLogs.map(log => (
+              <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: '#6B6458', padding: '5px 0', borderBottom: '1px solid #EFE9DA' }}>
+                <span>📱 <b>{log.student_name}</b> ({log.phone}) — {log.message_type}</span>
+                <span>by <b>{log.sent_by}</b> ({log.sent_by_role}) · {log.created_at ? log.created_at.slice(11, 16) : ''}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 const navBtn = { background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: 6, cursor: 'pointer', display: 'flex' };
 const dateInput = { background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '6px 10px', fontSize: 13 };
 const selectStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid #D8D0BC', background: '#FFFDFA', fontSize: 14 };
