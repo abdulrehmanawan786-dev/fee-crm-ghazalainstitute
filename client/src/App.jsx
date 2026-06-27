@@ -220,11 +220,6 @@ async function sendReminders() {
     : (dateFrom && dateTo) ? `Registrations from ${formatDate(dateFrom)} to ${formatDate(dateTo)}`
     : `Students registered in ${monthLabel(selectedMonth)}`;
 
-  return (
-    if (showReports) {
-    return <ReportsPage onBack={() => setShowReports(false)} />;
-  }
-
   if (showReports) {
     return <ReportsPage onBack={() => setShowReports(false)} />;
   }
