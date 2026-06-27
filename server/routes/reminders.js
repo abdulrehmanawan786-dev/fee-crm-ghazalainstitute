@@ -40,7 +40,38 @@ async function sendReminders(sentBy, sentByRole) {
     throw err;
   }
 }
+// Single student reminder
+router.post('/send/:studentId', requireAuth, async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const [students] = await pool.query(`
+      SELECT DISTINCT s.id, s.name, s.phone, s.course, s.mode,
+             p.amount, p.due_date, p.type
+      FROM students s
+      JOIN payments p ON p.student_id = s.id
+      WHERE s.id = ?
+      AND s.status = 'Active'
+      AND s.remarks IS NULL
+      AND p.paid_date IS NULL
+    `, [studentId]);
 
+    let sent = 0;
+    for (const student of students) {
+      if (!student.phone) continue;
+      const message = `Dear ${student.name},\n\nThis is a friendly reminder from Ghazala Institute regarding your upcoming fee payment.\n\n📚 Course: ${student.course} (${student.mode})\n💰 Amount Due: Rs. ${student.amount}\n📅 Due Date: ${student.due_date}\n\nKindly ensure your payment is submitted before the due date to avoid any inconvenience.\n\nFor any queries, please contact our administration.\n\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`;
+      await sendWhatsAppMessage(student.phone, message);
+      await pool.query(
+        'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
+        [student.id, req.admin.username, req.admin.role, 'fee_reminder']
+      );
+      sent++;
+    }
+    res.json({ success: true, sent });
+  } catch (err) {
+    console.error('Single reminder error:', err);
+    res.status(500).json({ error: 'Could not send reminder.' });
+  }
+});
 router.post('/send', requireAuth, async (req, res) => {
   try {
     const result = await sendReminders(req.admin.username, req.admin.role);
