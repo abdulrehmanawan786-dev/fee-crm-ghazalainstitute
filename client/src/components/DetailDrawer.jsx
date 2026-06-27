@@ -55,7 +55,7 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
   async function sendReminderForPayment(type) {
     setSendingReminder(type);
     try {
-      await api.sendReminders();
+      await api.sendStudentReminder(student.id);
       const logs = await api.reminderLogs();
       setReminderLogs(logs.filter(l => l.student_id === student.id));
     } catch (e) { /* none */ }
