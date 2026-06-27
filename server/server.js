@@ -12,7 +12,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const usersRoutes = require('./routes/users');
 const imageRoutes = require('./routes/images');
 const exportRoutes = require('./routes/export');
-
+const reportsRoutes = require('./routes/reports');
 const app = express();
 
 const allowedOrigins = (process.env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -34,6 +34,7 @@ app.use('/api/dashboard', requireAuth, dashboardRoutes);
 app.use('/api/users', requireAuth, usersRoutes);
 app.use('/api/images', requireAuth, imageRoutes);
 app.use('/api/export', requireAuth, exportRoutes);
+app.use('/api/reports', requireAuth, reportsRoutes);
 app.use('/api/reminders', requireAuth, reminderRoutes);
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
