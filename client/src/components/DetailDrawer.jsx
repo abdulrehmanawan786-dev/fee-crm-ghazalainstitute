@@ -188,7 +188,9 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
         )}
 
       </div>
-
+<div style={{ height: 60 }} />
+      </div>
+      {viewerImage && (
       {viewerImage && (
         <div onClick={() => setViewerImage(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: 24 }}>
           <img src={viewerImage} alt="" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 8 }} />
