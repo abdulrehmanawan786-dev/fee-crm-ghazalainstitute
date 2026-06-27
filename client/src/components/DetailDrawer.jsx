@@ -161,14 +161,29 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
         {reminderLogs.length > 0 && (
           <div style={{ marginTop: 24 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, borderBottom: '1px solid #E3DCC9', paddingBottom: 4 }}>
-              Reminder History ({reminderLogs.length} sent)
+              Reminder History · Total {reminderLogs.length} sent
             </div>
-            {reminderLogs.map(log => (
-              <div key={log.id} style={{ fontSize: 12, color: '#6B6458', padding: '5px 0', borderBottom: '1px solid #EFE9DA', display: 'flex', justifyContent: 'space-between' }}>
-                <span>📱 {log.message_type} — by <b>{log.sent_by}</b> ({log.sent_by_role})</span>
-                <span>{formatDate(log.created_at)}</span>
-              </div>
-            ))}
+            {(() => {
+              const grouped = {};
+              reminderLogs.forEach(log => {
+                const date = log.created_at ? log.created_at.slice(0, 10) : 'Unknown';
+                if (!grouped[date]) grouped[date] = [];
+                grouped[date].push(log);
+              });
+              return Object.entries(grouped).map(([date, logs]) => (
+                <div key={date} style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1B2A4A', marginBottom: 4 }}>
+                    📅 {formatDate(date)} — {logs.length} reminder{logs.length > 1 ? 's' : ''} sent
+                  </div>
+                  {logs.map(log => (
+                    <div key={log.id} style={{ fontSize: 12, color: '#6B6458', padding: '3px 0 3px 12px', borderLeft: '2px solid #E3DCC9', marginBottom: 2, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>📱 {log.message_type} — by <b>{log.sent_by}</b> ({log.sent_by_role})</span>
+                      <span style={{ fontSize: 11 }}>{log.created_at ? log.created_at.slice(11, 16) : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              ));
+            })()}
           </div>
         )}
 
