@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: '/var/www/ghazala-fee-crm/server/.env' });
 require('./scheduler');
 const express = require('express');
 const cors = require('cors');
@@ -42,5 +42,5 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Unexpected server error.' });
 });
 
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Ghazala Fee CRM server listening on port ${PORT}`));
