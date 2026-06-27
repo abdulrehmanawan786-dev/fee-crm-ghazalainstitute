@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings, Bell } from 'lucide-react';import { api, getToken, getRole, setToken, setRole } from './api/client';
-import Login from './components/Login';
+import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings, Bell, X } from 'lucide-react';import Login from './components/Login';
 import ResetPassword from './components/ResetPassword';
 import StudentTable from './components/StudentTable';
 import StudentModal from './components/StudentModal';
@@ -223,9 +222,6 @@ async function sendReminders() {
         <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src={logoUrl} alt="Ghazala Institute" style={{ height: 150, width: 'auto' }} />
-          </div>
-          <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 700, color: '#1B2A4A' }}>Fee Ledger</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
            <button onClick={sendReminders} disabled={reminderSending} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#2F6F4E' }}>
