@@ -1,32 +1,25 @@
 const axios = require('axios');
 
-const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
-const ACCESS_TOKEN = process.env.WHATSAPP_TOKEN;
-
 async function sendWhatsAppMessage(phone, message) {
   let number = phone.replace(/[\s\-\(\)]/g, '');
   if (number.startsWith('0')) number = '92' + number.slice(1);
   if (!number.startsWith('92')) number = '92' + number;
+
   try {
     const response = await axios.post(
-      `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: 'whatsapp',
-        to: number,
-        type: 'text',
-        text: { body: message }
-      },
+      'http://localhost:3000/api/internal/send-message',
+      { phone: number, message },
       {
         headers: {
-          'Authorization': `Bearer ${ACCESS_TOKEN}`,
+          'x-api-secret': process.env.INTERNAL_API_SECRET,
           'Content-Type': 'application/json'
         }
       }
     );
-    console.log(`WhatsApp sent to ${number}:`, response.data);
+    console.log(`WhatsApp sent to ${number}`);
     return response.data;
   } catch (err) {
-    console.error(`WhatsApp error for ${number}:`, err.response?.data || err.message);
+    console.error(`WhatsApp error for ${number}:`, err.message);
     throw err;
   }
 }
