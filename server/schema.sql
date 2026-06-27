@@ -72,3 +72,25 @@ CREATE TABLE IF NOT EXISTS login_history (
   INDEX idx_username (username),
   INDEX idx_created_at (created_at)
 );
+-- Phase 4: WhatsApp fee reminders — every reminder sent (manual or automatic) is logged here.
+CREATE TABLE IF NOT EXISTS reminder_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id VARCHAR(36) NOT NULL,
+  sent_by VARCHAR(50) NOT NULL,
+  sent_by_role VARCHAR(20) NOT NULL,
+  message_type VARCHAR(30) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  INDEX idx_created_at (created_at)
+);
+
+-- Phase 4: forgot-password reset links sent via WhatsApp. Tokens expire after 30 minutes.
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  admin_id INT NOT NULL,
+  token VARCHAR(64) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE,
+  INDEX idx_token (token)
+);
