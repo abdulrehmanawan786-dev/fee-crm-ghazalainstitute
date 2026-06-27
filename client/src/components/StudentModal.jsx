@@ -47,7 +47,13 @@ export default function StudentModal({ initial, onSave, onClose }) {
       setImagesLoaded(true);
     })();
   }, [initial]);
-
+React.useEffect(() => {
+    function handleEsc(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
   function handleCourseChange(c) {
     setCourse(c);
     setCourseFee(COURSE_FEES[c] ?? 0);
