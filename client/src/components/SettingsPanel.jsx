@@ -5,7 +5,13 @@ import { formatDate } from '../helpers';
 
 export default function SettingsPanel({ onClose, role }) {
   const [tab, setTab] = useState('password'); // 'password' | 'history' | 'team'
-
+useEffect(() => {
+    function handleEsc(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
   const tabs = [['password', 'Change password'], ['history', 'Login history']];
   if (role === 'admin') tabs.push(['team', 'Manage team']);
 
