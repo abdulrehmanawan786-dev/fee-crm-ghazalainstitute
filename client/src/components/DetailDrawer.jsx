@@ -186,9 +186,8 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
             })()}
           </div>
         )}
-
-      </div>
-<div style={{ height: 60 }} />
+        
+        <div style={{ height: 60 }} />
       </div>
 
       {viewerImage && (
