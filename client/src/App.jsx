@@ -225,6 +225,10 @@ async function sendReminders() {
     return <ReportsPage onBack={() => setShowReports(false)} />;
   }
 
+  if (showReports) {
+    return <ReportsPage onBack={() => setShowReports(false)} />;
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#F7F3EC', fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", color: '#1B2A4A', paddingBottom: 60 }}>
       <div style={{ borderBottom: '2px solid #1B2A4A', padding: '24px 20px 18px', background: '#F7F3EC' }}>
