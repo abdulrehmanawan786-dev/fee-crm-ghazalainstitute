@@ -1,4 +1,3 @@
-cat > /var/www/ghazala-fee-crm/server/routes/auth.js << 'EOF'
 // const { sendWhatsAppMessage } = require('../utils/whatsapp');
 const express = require('express');
 const bcrypt = require('bcryptjs');
@@ -153,4 +152,3 @@ router.post('/reset-password', async (req, res) => {
 });
 
 module.exports = router;
-EOF
