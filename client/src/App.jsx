@@ -394,6 +394,8 @@ async function sendReminders() {
 function ReminderLogsModal({ onClose }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterDate, setFilterDate] = useState('');
+  const [filterStudent, setFilterStudent] = useState('');
 
   useEffect(() => {
     api.reminderLogs().then(data => { setLogs(data); setLoading(false); }).catch(() => setLoading(false));
@@ -405,8 +407,14 @@ function ReminderLogsModal({ onClose }) {
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
+  const filtered = logs.filter(log => {
+    const dateMatch = filterDate ? (log.created_at && log.created_at.slice(0, 10) === filterDate) : true;
+    const studentMatch = filterStudent ? (log.student_name && log.student_name.toLowerCase().includes(filterStudent.toLowerCase())) : true;
+    return dateMatch && studentMatch;
+  });
+
   const grouped = {};
-  logs.forEach(log => {
+  filtered.forEach(log => {
     const date = log.created_at ? log.created_at.slice(0, 10) : 'Unknown';
     if (!grouped[date]) grouped[date] = [];
     grouped[date].push(log);
@@ -414,14 +422,33 @@ function ReminderLogsModal({ onClose }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,42,74,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 60 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', borderRadius: 10, padding: 24, width: '100%', maxWidth: 600, maxHeight: '85vh', overflowY: 'auto', border: '1px solid #1B2A4A' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', borderRadius: 10, padding: 24, width: '100%', maxWidth: 650, maxHeight: '85vh', overflowY: 'auto', border: '1px solid #1B2A4A' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 20, margin: 0 }}>Reminder Logs</h2>
+          <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 20, margin: 0 }}>Reminder Logs · {logs.length} total</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6458' }}><X size={18} /></button>
         </div>
 
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+            style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #D8D0BC', background: '#FFFDFA', fontSize: 13 }} />
+          <input type="text" value={filterStudent} onChange={e => setFilterStudent(e.target.value)}
+            placeholder="Search student name..."
+            style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #D8D0BC', background: '#FFFDFA', fontSize: 13, flex: 1 }} />
+          {(filterDate || filterStudent) && (
+            <button onClick={() => { setFilterDate(''); setFilterStudent(''); }}
+              style={{ background: 'none', border: '1px solid #D8D0BC', borderRadius: 6, padding: '7px 12px', fontSize: 12, cursor: 'pointer', color: '#B0432F', fontWeight: 600 }}>
+              Clear filters
+            </button>
+          )}
+        </div>
+
+        <div style={{ fontSize: 12, color: '#6B6458', marginBottom: 12 }}>
+          Showing {filtered.length} of {logs.length} reminders
+        </div>
+
         {loading && <div style={{ color: '#6B6458', fontSize: 13 }}>Loading…</div>}
-        {!loading && logs.length === 0 && <div style={{ color: '#6B6458', fontSize: 13 }}>No reminders sent yet.</div>}
+        {!loading && filtered.length === 0 && <div style={{ color: '#6B6458', fontSize: 13 }}>No reminders found.</div>}
 
         {Object.entries(grouped).map(([date, dayLogs]) => (
           <div key={date} style={{ marginBottom: 16 }}>
@@ -429,9 +456,9 @@ function ReminderLogsModal({ onClose }) {
               📅 {date} — {dayLogs.length} reminder{dayLogs.length > 1 ? 's' : ''} sent
             </div>
             {dayLogs.map(log => (
-              <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: '#6B6458', padding: '5px 0', borderBottom: '1px solid #EFE9DA' }}>
+              <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: '#6B6458', padding: '6px 0', borderBottom: '1px solid #EFE9DA' }}>
                 <span>📱 <b>{log.student_name}</b> ({log.phone}) — {log.message_type}</span>
-                <span>by <b>{log.sent_by}</b> ({log.sent_by_role}) · {log.created_at ? log.created_at.slice(11, 16) : ''}</span>
+                <span style={{ whiteSpace: 'nowrap', marginLeft: 8 }}>by <b>{log.sent_by}</b> ({log.sent_by_role}) · {log.created_at ? log.created_at.slice(11, 16) : ''}</span>
               </div>
             ))}
           </div>
