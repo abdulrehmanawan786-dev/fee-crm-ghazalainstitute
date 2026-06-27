@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings, Bell, X } from 'lucide-react';import Login from './components/Login';
+import { Plus, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowLeft, AlertTriangle, Camera, Download, LogOut, Settings, Bell, X } from 'lucide-react';
+import { api, getToken, getRole, setToken, setRole } from './api/client';
+import Login from './components/Login';
 import ResetPassword from './components/ResetPassword';
 import StudentTable from './components/StudentTable';
 import StudentModal from './components/StudentModal';
