@@ -40,33 +40,33 @@ async function sendReminders(sentBy, sentByRole) {
     throw err;
   }
 }
-// Single student reminder
+// Single student reminder — for one SPECIFIC payment only (registration, installment1,
+// installment2, or lumpsum), never for every outstanding payment on the student.
 router.post('/send/:studentId', requireAuth, async (req, res) => {
   try {
     const { studentId } = req.params;
-    const [students] = await pool.query(`
-      SELECT DISTINCT s.id, s.name, s.phone, s.course, s.mode,
-             p.amount, p.due_date, p.type
+    const { type } = req.query;
+    if (!type) return res.status(400).json({ error: 'Payment type is required.' });
+
+    const [[student]] = await pool.query(`
+      SELECT s.id, s.name, s.phone, s.course, s.mode, p.amount, p.due_date, p.type
       FROM students s
       JOIN payments p ON p.student_id = s.id
       WHERE s.id = ?
-      AND s.status = 'Active'
-      AND s.remarks IS NULL
+      AND p.type = ?
       AND p.paid_date IS NULL
-    `, [studentId]);
+    `, [studentId, type]);
 
-    let sent = 0;
-    for (const student of students) {
-      if (!student.phone) continue;
-      const message = `Dear ${student.name},\n\nThis is a friendly reminder from Ghazala Institute regarding your upcoming fee payment.\n\n📚 Course: ${student.course} (${student.mode})\n💰 Amount Due: Rs. ${student.amount}\n📅 Due Date: ${student.due_date}\n\nKindly ensure your payment is submitted before the due date to avoid any inconvenience.\n\nFor any queries, please contact our administration.\n\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`;
-      await sendWhatsAppMessage(student.phone, message);
-      await pool.query(
-        'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
-        [student.id, req.admin.username, req.admin.role, 'fee_reminder']
-      );
-      sent++;
-    }
-    res.json({ success: true, sent });
+    if (!student) return res.status(404).json({ error: 'No outstanding payment of this type found for this student.' });
+    if (!student.phone) return res.status(400).json({ error: 'This student has no phone number on file.' });
+
+    const message = `Dear ${student.name},\n\nThis is a friendly reminder from Ghazala Institute regarding your upcoming fee payment.\n\n📚 Course: ${student.course} (${student.mode})\n💰 Amount Due: Rs. ${student.amount}\n📅 Due Date: ${student.due_date}\n\nKindly ensure your payment is submitted before the due date to avoid any inconvenience.\n\nFor any queries, please contact our administration.\n\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`;
+    await sendWhatsAppMessage(student.phone, message);
+    await pool.query(
+      'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
+      [student.id, req.admin.username, req.admin.role, `fee_reminder_${type}`]
+    );
+    res.json({ success: true, sent: 1 });
   } catch (err) {
     console.error('Single reminder error:', err);
     res.status(500).json({ error: 'Could not send reminder.' });
