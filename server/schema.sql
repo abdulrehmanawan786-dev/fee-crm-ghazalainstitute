@@ -89,8 +89,8 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id INT AUTO_INCREMENT PRIMARY KEY,
   admin_id INT NOT NULL,
   token VARCHAR(64) NOT NULL,
+  used TINYINT(1) NOT NULL DEFAULT 0,
   expires_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE,
   INDEX idx_token (token)
 );
