@@ -27,17 +27,33 @@ export default function ReceiptView({ student, payment, onClose }) {
   return (
     <div className="receipt-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(27,42,74,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 80 }} onClick={onClose}>
       <style>{`
+        <style>{`
         @media print {
+          @page {
+            size: A4;
+            margin: 12mm;
+          }
           /* Hide absolutely everything on the page, then reveal only the receipt
              subtree — this way it never matters what else is open behind it
              (student profile, table, etc.), only the receipt itself ever prints. */
           body * { visibility: hidden !important; }
           .receipt-overlay, .receipt-overlay * { visibility: visible !important; }
-          .receipt-overlay { position: absolute !important; inset: auto !important; top: 0; left: 0; background: none !important; padding: 0 !important; display: block !important; }
+          .receipt-overlay {
+            position: static !important;
+            background: none !important;
+            padding: 0 !important;
+            display: block !important;
+            width: 100% !important;
+          }
           .receipt-no-print { display: none !important; }
-          .receipt-card { box-shadow: none !important; page-break-inside: avoid; }
+          .receipt-card {
+            box-shadow: none !important;
+            page-break-inside: avoid;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
           .screen-only-copy { display: none !important; }
-          .print-stack { display: block !important; }
+          .print-stack { display: block !important; width: 100% !important; }
         }
         .print-stack { display: none; }
       `}</style>
