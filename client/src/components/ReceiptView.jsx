@@ -49,7 +49,8 @@ export default function ReceiptView({ student, payment, onClose }) {
             box-shadow: none !important;
             page-break-inside: avoid;
             width: 100% !important;
-            max-width: 100% !important;
+            max-width: 480px !important;
+            margin: 0 auto !important;
             box-sizing: border-box !important;
           }
           .screen-only-copy { display: none !important; }
