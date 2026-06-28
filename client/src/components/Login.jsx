@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api, setToken, setRole } from '../api/client';
 
 export default function Login({ onLoggedIn }) {
@@ -9,6 +9,13 @@ export default function Login({ onLoggedIn }) {
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMsg, setForgotMsg] = useState('');
+  const [maskedEmail, setMaskedEmail] = useState('');
+
+  useEffect(() => {
+    if (forgotMode && !maskedEmail) {
+      api.forgotPasswordInfo().then(d => setMaskedEmail(d.maskedEmail)).catch(() => {});
+    }
+  }, [forgotMode, maskedEmail]);
 
   async function submit(e) {
     e.preventDefault();
@@ -31,7 +38,7 @@ export default function Login({ onLoggedIn }) {
     setForgotMsg('');
     try {
       await api.forgotPassword();
-      setForgotMsg('✅ Reset link WhatsApp par bhej diya gaya!');
+      setForgotMsg('✅ A password reset link has been sent to your email.');
     } catch (err) {
       setForgotMsg('❌ ' + err.message);
     } finally {
@@ -86,7 +93,7 @@ export default function Login({ onLoggedIn }) {
         ) : (
           <div>
             <p style={{ fontSize: 14, color: '#1B2A4A', marginBottom: 16 }}>
-              Reset link aapke registered WhatsApp number <b>03306910910</b> par bheja jayega!
+              A password reset link will be sent to your registered email address{maskedEmail ? <>: <b>{maskedEmail}</b></> : '.'}
             </p>
             {forgotMsg && (
               <div style={{ marginBottom: 16, padding: '8px 12px', borderRadius: 6, fontSize: 13,
@@ -101,13 +108,13 @@ export default function Login({ onLoggedIn }) {
               width: '100%', background: '#1B2A4A', color: '#F7F3EC', border: 'none',
               borderRadius: 6, padding: '12px', fontSize: 15, fontWeight: 600, cursor: 'pointer',
             }}>
-              {forgotLoading ? 'Bhej raha hai…' : 'Reset link bhejo'}
+              {forgotLoading ? 'Sending…' : 'Send reset link'}
             </button>
             <button onClick={() => { setForgotMode(false); setForgotMsg(''); }} style={{
               marginTop: 12, width: '100%', background: 'none', border: 'none',
               color: '#6B6458', fontSize: 13, cursor: 'pointer', textDecoration: 'underline',
             }}>
-              Wapas login par jaen
+              Back to login
             </button>
           </div>
         )}
