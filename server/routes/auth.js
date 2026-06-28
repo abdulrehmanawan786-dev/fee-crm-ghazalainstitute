@@ -8,6 +8,10 @@ const router = express.Router();
 const failedAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
+function clientIp(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  return (fwd ? fwd.split(',')[0].trim() : req.socket.remoteAddress) || 'unknown';
+}
 function maskEmail(email) {
   if (!email || !email.includes('@')) return '';
   const [local, domain] = email.split('@');
