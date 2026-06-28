@@ -53,7 +53,7 @@ router.post('/login', async (req, res) => {
       sendEmail(
         process.env.ADMIN_EMAIL,
         'Ghazala Fee CRM — New Login',
-        `A login just happened.\n\nUsername: ${admin.username}\nTime: ${new Date().toLocaleString()}\nIP: ${clientIp(req)}`
+        `A login just happened.\n\nUsername: ${admin.username}\nTime: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Karachi', dateStyle: 'medium', timeStyle: 'short' })}\nIP: ${clientIp(req)}`
       ).catch(err => console.error('Login email failed:', err.message));
     }
     const token = jwt.sign({ sub: admin.id, username: admin.username, role: admin.role }, process.env.JWT_SECRET, {
