@@ -8,9 +8,12 @@ const router = express.Router();
 const failedAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
-function clientIp(req) {
-  const fwd = req.headers['x-forwarded-for'];
-  return (fwd ? fwd.split(',')[0].trim() : req.socket.remoteAddress) || 'unknown';
+function maskEmail(email) {
+  if (!email || !email.includes('@')) return '';
+  const [local, domain] = email.split('@');
+  const visible = local.slice(0, 2);
+  const masked = visible + '*'.repeat(Math.max(local.length - 2, 3));
+  return `${masked}@${domain}`;
 }
 async function logLogin(username, success, req) {
   try {
@@ -97,6 +100,9 @@ router.get('/login-history', requireAuth, async (req, res) => {
     console.error('Login history error:', err);
     res.status(500).json({ error: 'Could not load login history.' });
   }
+});
+router.get('/forgot-password-info', (req, res) => {
+  res.json({ maskedEmail: maskEmail(process.env.ADMIN_EMAIL) });
 });
 router.post('/forgot-password', async (req, res) => {
   try {
