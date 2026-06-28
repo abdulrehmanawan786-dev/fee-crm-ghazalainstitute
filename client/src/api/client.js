@@ -39,6 +39,7 @@ async function request(path, options = {}) {
 export const api = {
   login: (username, password) =>
     request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  forgotPasswordInfo: () => request('/auth/forgot-password-info'),
   forgotPassword: () =>
     request('/auth/forgot-password', { method: 'POST' }),
   resetPassword: (token, newPassword) =>
