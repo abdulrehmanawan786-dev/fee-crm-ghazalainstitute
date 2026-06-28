@@ -37,12 +37,12 @@ export default function ReceiptView({ student, payment, onClose }) {
              (student profile, table, etc.), only the receipt itself ever prints. */
           body * { visibility: hidden !important; }
           .receipt-overlay, .receipt-overlay * { visibility: visible !important; }
-          .receipt-overlay {
-            position: static !important;
+       .receipt-overlay {
+            position: fixed !important;
+            inset: 0 !important;
             background: none !important;
             padding: 0 !important;
             display: block !important;
-            width: 100% !important;
           }
           .receipt-no-print { display: none !important; }
           .receipt-card {
