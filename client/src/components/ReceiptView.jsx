@@ -49,7 +49,7 @@ export default function ReceiptView({ student, payment, onClose }) {
             box-shadow: none !important;
             page-break-inside: avoid;
             width: 100% !important;
-            max-width: 480px !important;
+            max-width: 600px !important;
             margin: 0 auto !important;
             box-sizing: border-box !important;
           }
@@ -83,7 +83,7 @@ function ReceiptCard({ student, payment, onClose, showControls, copyLabel, compa
   // printed page together — every spacing/font value below is simply scaled down,
   // never restructured, so the compact and full versions always stay visually in sync.
   const s = compact
-    ? { pad: 10, headerPad: 6, logoH: 32, recF: 13, gridGap: 4, gridMb: 6, labelF: 9, valF: 10, lineMb: 5, linePad: 5, lineF: 10, amtF: 13, boxPad: '5px 8px', boxMb: 6, boxF: 9, termsMb: 5, termsTitleF: 8, termsF: 7, termsLh: 1.25, footF: 8, sigW: 60, sigH: 14, labelMb: 3 }
+    ? { pad: 20, headerPad: 10, logoH: 44, recF: 15, gridGap: 8, gridMb: 12, labelF: 10, valF: 12, lineMb: 9, linePad: 9, lineF: 11, amtF: 14, boxPad: '8px 10px', boxMb: 12, boxF: 10, termsMb: 10, termsTitleF: 10, termsF: 9, termsLh: 1.4, footF: 10, sigW: 75, sigH: 18, labelMb: 6 }
     : { pad: 28, headerPad: 14, logoH: 56, recF: 18, gridGap: 10, gridMb: 16, labelF: 12, valF: 14, lineMb: 12, linePad: 12, lineF: 13, amtF: 17, boxPad: '10px 12px', boxMb: 16, boxF: 12, termsMb: 14, termsTitleF: 11, termsF: 10, termsLh: 1.5, footF: 11, sigW: 90, sigH: 24, labelMb: 8 };
 
   return (
