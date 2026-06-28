@@ -26,7 +26,6 @@ function printedOnNow() {
 export default function ReceiptView({ student, payment, onClose }) {
   return (
     <div className="receipt-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(27,42,74,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 80 }} onClick={onClose}>
-      <style>{`
         <style>{`
         @media print {
           @page {
