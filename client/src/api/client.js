@@ -53,6 +53,9 @@ export const api = {
   listUsers: () => request('/users'),
   createUser: (username, password, role) => request('/users', { method: 'POST', body: JSON.stringify({ username, password, role }) }),
   deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+  listComments: (studentId) => request(`/comments/${studentId}`),
+  addComment: (studentId, comment) => request(`/comments/${studentId}`, { method: 'POST', body: JSON.stringify({ comment }) }),
+  deleteComment: (commentId) => request(`/comments/comment/${commentId}`, { method: 'DELETE' }),
   courseWiseReport: (params) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
     return request(`/reports/course-wise?${qs}`);
