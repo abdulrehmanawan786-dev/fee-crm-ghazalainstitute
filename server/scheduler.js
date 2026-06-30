@@ -61,7 +61,7 @@ cron.schedule('15 21 * * *', async () => {
     for (const student of overdue) {
       if (!student.phone) continue;
       await sendWhatsAppMessage(student.phone,
-        `Dear ${student.name},\n\nThis is a reminder from Ghazala Institute that your fee payment is now overdue.\nCourse: ${student.course} (${student.mode})\nAmount Due: Rs. ${student.amount || ''}\nDue Date: ${student.due_date}\n\nKindly ensure your payment is submitted as soon as possible to avoid any inconvenience.\nFor any queries, please contact our administration.\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`
+        `Dear ${student.name},\n\nThis is a reminder from Ghazala Institute that your fee payment is now overdue.\n\nCourse: ${student.course} (${student.mode})\nAmount Due: Rs. ${student.amount || ''}\nDue Date: ${student.due_date}\n\nKindly ensure your payment is submitted as soon as possible to avoid any inconvenience.\n\nFor any queries, please contact our administration.\n\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`
       );
       await pool.query(
         'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
