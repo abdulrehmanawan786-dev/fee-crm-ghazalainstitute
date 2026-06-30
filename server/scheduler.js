@@ -3,7 +3,7 @@ const pool = require('./config/db');
 const { sendWhatsAppMessage } = require('./utils/whatsapp');
 
 // Daily at 9:00 AM Pakistan time
-cron.schedule('15 25 * * *', async () => {
+cron.schedule('27 21 * * *', async () => {
   console.log('Running daily fee reminders...');
   try {
     const [dueToday] = await pool.query(`
