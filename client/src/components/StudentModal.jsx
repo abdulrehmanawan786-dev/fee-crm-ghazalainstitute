@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Camera } from 'lucide-react';
-import { COURSES, COURSE_FEES, MODES, ENROLL_STATUSES, REG_FEE_DEFAULT, INSTRUCTORS, SCHEDULE_OPTIONS, getCourseScheduleDefault, calculateEndDate, fmt, formatDate, todayStr, findPayment } from '../helpers';
+import { COURSES, COURSE_FEES, MODES, ENROLL_STATUSES, REG_FEE_DEFAULT, INSTRUCTORS, SCHEDULE_OPTIONS, METHODS, getCourseScheduleDefault, calculateEndDate, fmt, formatDate, todayStr, findPayment } from '../helpers';
 import { api } from '../api/client';
 
 export default function StudentModal({ initial, onSave, onClose }) {
@@ -16,9 +16,6 @@ export default function StudentModal({ initial, onSave, onClose }) {
   const [discount, setDiscount] = useState(initial?.discount ?? 0);
   const [paymentMode, setPaymentMode] = useState(initial?.payment_mode || 'installment');
 
-  // Instructor: dropdown of known names, or "Other" to type a custom one — once an
-  // existing student has a name not in the known list, we still show it correctly
-  // by treating it as the "Other" case rather than silently losing the value.
   const initialInstructorIsCustom = initial?.instructor && !INSTRUCTORS.includes(initial.instructor);
   const [instructorChoice, setInstructorChoice] = useState(
     initial?.instructor ? (initialInstructorIsCustom ? 'Other' : initial.instructor) : ''
@@ -42,12 +39,16 @@ export default function StudentModal({ initial, onSave, onClose }) {
   const [inst1Paid, setInst1Paid] = useState(!!inst1Payment?.paid_date);
   const [inst2Paid, setInst2Paid] = useState(!!inst2Payment?.paid_date);
   const [lumpsumPaid, setLumpsumPaid] = useState(!!lumpPayment?.paid_date);
+  const [regMethod, setRegMethod] = useState(regPayment?.method || METHODS[0]);
+  const [inst1Method, setInst1Method] = useState(inst1Payment?.method || METHODS[0]);
+  const [inst2Method, setInst2Method] = useState(inst2Payment?.method || METHODS[0]);
+  const [lumpsumMethod, setLumpsumMethod] = useState(lumpPayment?.method || METHODS[0]);
   const [remarks, setRemarks] = useState(initial?.remarks ?? null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const [images, setImages] = useState([]); // [{id, filename, previewUrl}]
-  const [pendingFiles, setPendingFiles] = useState([]); // File objects not yet uploaded
+  const [images, setImages] = useState([]);
+  const [pendingFiles, setPendingFiles] = useState([]);
   const [imagesLoaded, setImagesLoaded] = useState(!initial);
   const fileInputRef = useRef(null);
 
@@ -72,9 +73,6 @@ export default function StudentModal({ initial, onSave, onClose }) {
     if (!endDateManuallySet) setClassSchedule(getCourseScheduleDefault(course, m).schedule);
   }
 
-  // Recompute the end date whenever start date, schedule, or course/mode (which
-  // determines total classes) change — but only while the admin hasn't manually
-  // typed their own end date, so an intentional override never gets clobbered.
   React.useEffect(() => {
     if (endDateManuallySet) return;
     if (!courseStartDate || !classSchedule) { setCourseEndDate(''); return; }
@@ -112,6 +110,7 @@ export default function StudentModal({ initial, onSave, onClose }) {
         regDate, discount: Number(discount) || 0, paymentMode,
         inst1Date, inst2Date, lumpsumDate, remarks,
         regPaid, inst1Paid, inst2Paid, lumpsumPaid,
+        regMethod, inst1Method, inst2Method, lumpsumMethod,
         instructor: instructorChoice === 'Other' ? instructorCustom.trim() : (instructorChoice || null),
         classSchedule, courseStartDate: courseStartDate || null, courseEndDate: courseEndDate || null,
       };
@@ -185,6 +184,11 @@ export default function StudentModal({ initial, onSave, onClose }) {
         <label style={checkRow}>
           <input type="checkbox" checked={regPaid} onChange={e => setRegPaid(e.target.checked)} /> Registration fee paid
         </label>
+        {regPaid && (
+          <select style={{ ...inputStyle, marginTop: 6 }} value={regMethod} onChange={e => setRegMethod(e.target.value)}>
+            {METHODS.map(m => <option key={m}>{m}</option>)}
+          </select>
+        )}
 
         <label style={{ ...labelStyle, display: 'block', marginTop: 12 }}>Discount (optional)
           <input style={inputStyle} type="number" value={discount} onChange={e => setDiscount(e.target.value)} placeholder="0" />
@@ -244,6 +248,11 @@ export default function StudentModal({ initial, onSave, onClose }) {
             <label style={checkRow}>
               <input type="checkbox" checked={lumpsumPaid} onChange={e => setLumpsumPaid(e.target.checked)} /> Payment received
             </label>
+            {lumpsumPaid && (
+              <select style={{ ...inputStyle, marginTop: 6 }} value={lumpsumMethod} onChange={e => setLumpsumMethod(e.target.value)}>
+                {METHODS.map(m => <option key={m}>{m}</option>)}
+              </select>
+            )}
           </>
         ) : (
           <>
@@ -260,9 +269,19 @@ export default function StudentModal({ initial, onSave, onClose }) {
             <label style={checkRow}>
               <input type="checkbox" checked={inst1Paid} onChange={e => setInst1Paid(e.target.checked)} /> 1st installment paid
             </label>
+            {inst1Paid && (
+              <select style={{ ...inputStyle, marginTop: 6 }} value={inst1Method} onChange={e => setInst1Method(e.target.value)}>
+                {METHODS.map(m => <option key={m}>{m}</option>)}
+              </select>
+            )}
             <label style={checkRow}>
               <input type="checkbox" checked={inst2Paid} onChange={e => setInst2Paid(e.target.checked)} /> 2nd installment paid
             </label>
+            {inst2Paid && (
+              <select style={{ ...inputStyle, marginTop: 6 }} value={inst2Method} onChange={e => setInst2Method(e.target.value)}>
+                {METHODS.map(m => <option key={m}>{m}</option>)}
+              </select>
+            )}
           </>
         )}
 
