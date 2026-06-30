@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Clock, AlertTriangle, Pencil, Trash2, Bell } from 'lucide-react';
-import { fmt, formatDate, todayStr, netTotal, balance, findPayment, METHODS, STATUS_STYLE } from '../helpers';
+import { fmt, formatDate, todayStr, netTotal, balance, findPayment, METHODS, STATUS_STYLE, SCHEDULE_OPTIONS } from '../helpers';
 import { api } from '../api/client';
 import { Stamp } from './StudentTable';
 import ReceiptView from './ReceiptView';
+
+const SCHEDULE_LABELS = Object.fromEntries(SCHEDULE_OPTIONS.map(s => [s.value, s.label]));
 
 export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDeleteRequest }) {
   const [methodFor, setMethodFor] = useState(null);
@@ -13,6 +15,9 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
   const [printingPayment, setPrintingPayment] = useState(null);
   const [reminderLogs, setReminderLogs] = useState([]);
   const [sendingReminder, setSendingReminder] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [commentSaving, setCommentSaving] = useState(false);
   const total = netTotal(student);
   const bal = balance(student);
 
@@ -31,6 +36,7 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
         setReminderLogs(logs.filter(l => l.student_id === student.id));
       } catch (e) { /* none */ }
     })();
+    loadComments();
   }, [student.id]);
 
   useEffect(() => {
@@ -40,6 +46,29 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
+
+  async function loadComments() {
+    try {
+      const list = await api.listComments(student.id);
+      setComments(list);
+    } catch (e) { /* none */ }
+  }
+
+  async function submitComment() {
+    if (!newComment.trim()) return;
+    setCommentSaving(true);
+    try {
+      const list = await api.addComment(student.id, newComment.trim());
+      setComments(list);
+      setNewComment('');
+    } catch (e) { /* surfaced via empty state, no need to alert here */ }
+    setCommentSaving(false);
+  }
+
+  async function removeComment(commentId) {
+    await api.deleteComment(commentId);
+    setComments(prev => prev.filter(c => c.id !== commentId));
+  }
 
   async function pickMethod(type, method) {
     const updated = await api.markPaid(student.id, type, method);
@@ -105,6 +134,10 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
           <div style={infoRow}><span style={infoLabel}>Course fee</span><span style={infoValue}>{fmt(student.course_fee)}</span></div>
           <div style={infoRow}><span style={infoLabel}>Discount</span><span style={infoValue}>{fmt(student.discount)}</span></div>
           <div style={infoRow}><span style={infoLabel}>Payment plan</span><span style={infoValue}>{student.payment_mode === 'lumpsum' ? 'Lumpsum' : 'Installments'}</span></div>
+          <div style={infoRow}><span style={infoLabel}>Instructor</span><span style={infoValue}>{student.instructor || '—'}</span></div>
+          <div style={infoRow}><span style={infoLabel}>Class schedule</span><span style={infoValue}>{SCHEDULE_LABELS[student.class_schedule] || '—'}</span></div>
+          <div style={infoRow}><span style={infoLabel}>Course start date</span><span style={infoValue}>{formatDate(student.course_start_date)}</span></div>
+          <div style={infoRow}><span style={infoLabel}>Course end date</span><span style={infoValue}>{formatDate(student.course_end_date)}</span></div>
           <div style={{ ...infoRow, borderBottom: 'none' }}><span style={infoLabel}>Remarks</span><span style={infoValue}>{student.remarks || 'Active'}</span></div>
         </div>
 
@@ -157,6 +190,33 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
           </>
         )}
 
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '20px 0 8px', borderBottom: '1px solid #E3DCC9', paddingBottom: 4 }}>
+          Comments
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <textarea value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Add a note about this student…"
+            rows={2} style={{ flex: 1, padding: '8px 10px', borderRadius: 6, border: '1px solid #D8D0BC', background: '#FFFDFA', fontSize: 13, resize: 'vertical', fontFamily: 'inherit' }} />
+          <button onClick={submitComment} disabled={commentSaving || !newComment.trim()} style={{
+            background: '#1B2A4A', color: '#F7F3EC', border: 'none', borderRadius: 6, padding: '0 16px', fontSize: 13, fontWeight: 600,
+            cursor: commentSaving || !newComment.trim() ? 'default' : 'pointer', opacity: commentSaving || !newComment.trim() ? 0.6 : 1,
+          }}>
+            {commentSaving ? '…' : 'Add'}
+          </button>
+        </div>
+        {comments.length === 0 ? (
+          <div style={{ fontSize: 12, color: '#6B6458', marginBottom: 10 }}>No comments yet.</div>
+        ) : (
+          comments.map(c => (
+            <div key={c.id} style={{ border: '1px solid #E3DCC9', borderRadius: 6, padding: '8px 10px', marginBottom: 6, background: '#FFFDFA' }}>
+              <div style={{ fontSize: 13, color: '#1B2A4A', whiteSpace: 'pre-wrap' }}>{c.comment_text}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                <span style={{ fontSize: 11, color: '#6B6458' }}>{c.created_by} · {formatDate(c.created_at?.slice(0, 10))} {c.created_at?.slice(11, 16)}</span>
+                <button onClick={() => removeComment(c.id)} style={{ background: 'none', border: 'none', color: '#B0432F', fontSize: 11, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Delete</button>
+              </div>
+            </div>
+          ))
+        )}
+
         {/* Reminder History */}
         {reminderLogs.length > 0 && (
           <div style={{ marginTop: 24, paddingBottom: 40 }}>
@@ -186,7 +246,7 @@ export default function DetailDrawer({ student, onClose, onChanged, onEdit, onDe
             })()}
           </div>
         )}
-        
+
         <div style={{ height: 60 }} />
       </div>
 
