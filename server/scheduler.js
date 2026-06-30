@@ -6,11 +6,8 @@ const { sendWhatsAppMessage } = require('./utils/whatsapp');
 cron.schedule('0 13 * * *', async () => {
   console.log('Running daily fee reminders...');
   try {
-    // Due today — payments.paid_date IS NULL means unpaid; there is no stored
-    // "status" column on payments (paid/pending/overdue is always computed from
-    // paid_date/due_date), and the students column is "status", not "enroll_status".
     const [dueToday] = await pool.query(`
-      SELECT s.id, s.name, s.phone, s.course, s.mode, p.due_date
+      SELECT s.id, s.name, s.phone, s.course, s.mode, p.due_date, p.amount
       FROM students s
       JOIN payments p ON p.student_id = s.id
       WHERE s.status = 'Active'
@@ -22,7 +19,7 @@ cron.schedule('0 13 * * *', async () => {
     for (const student of dueToday) {
       if (!student.phone) continue;
       await sendWhatsAppMessage(student.phone,
-        `🔔 *Ghazala Institute — Fee Reminder*\n\nAssalam o Alaikum ${student.name}!\n\nAaj aapki fee due hai.\n📚 Course: ${student.course} (${student.mode})\n\nBrahe karam aaj fee jama karwayein.\n\nShukriya! 🙏\nGhazala Institute`
+        `Dear ${student.name},\n\nThis is a friendly reminder from Ghazala Institute regarding your upcoming fee payment.\nCourse: ${student.course} (${student.mode})\nAmount Due: Rs. ${student.amount || ''}\nDue Date: ${student.due_date}\n\nKindly ensure your payment is submitted before the due date to avoid any inconvenience.\nFor any queries, please contact our administration.\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`
       );
       await pool.query(
         'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
@@ -30,9 +27,8 @@ cron.schedule('0 13 * * *', async () => {
       );
     }
 
-    // Due tomorrow
     const [dueTomorrow] = await pool.query(`
-      SELECT s.id, s.name, s.phone, s.course, s.mode, p.due_date
+      SELECT s.id, s.name, s.phone, s.course, s.mode, p.due_date, p.amount
       FROM students s
       JOIN payments p ON p.student_id = s.id
       WHERE s.status = 'Active'
@@ -44,7 +40,7 @@ cron.schedule('0 13 * * *', async () => {
     for (const student of dueTomorrow) {
       if (!student.phone) continue;
       await sendWhatsAppMessage(student.phone,
-        `🔔 *Ghazala Institute — Fee Reminder*\n\nAssalam o Alaikum ${student.name}!\n\nKal aapki fee due hai.\n📚 Course: ${student.course} (${student.mode})\n\nBrahe karam kal fee jama karwayein.\n\nShukriya! 🙏\nGhazala Institute`
+        `Dear ${student.name},\n\nThis is a friendly reminder from Ghazala Institute regarding your upcoming fee payment.\nCourse: ${student.course} (${student.mode})\nAmount Due: Rs. ${student.amount || ''}\nDue Date: ${student.due_date}\n\nKindly ensure your payment is submitted before the due date to avoid any inconvenience.\nFor any queries, please contact our administration.\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`
       );
       await pool.query(
         'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
@@ -52,9 +48,8 @@ cron.schedule('0 13 * * *', async () => {
       );
     }
 
-    // Overdue
     const [overdue] = await pool.query(`
-      SELECT s.id, s.name, s.phone, s.course, s.mode, p.due_date
+      SELECT s.id, s.name, s.phone, s.course, s.mode, p.due_date, p.amount
       FROM students s
       JOIN payments p ON p.student_id = s.id
       WHERE s.status = 'Active'
@@ -66,7 +61,7 @@ cron.schedule('0 13 * * *', async () => {
     for (const student of overdue) {
       if (!student.phone) continue;
       await sendWhatsAppMessage(student.phone,
-        `⚠️ *Ghazala Institute — Overdue Fee Alert*\n\nAssalam o Alaikum ${student.name}!\n\nAapki fee overdue ho gayi hai.\n📚 Course: ${student.course} (${student.mode})\n\nForan fee jama karwayein warna registration cancel ho sakti hai.\n\nShukriya! 🙏\nGhazala Institute`
+        `Dear ${student.name},\n\nThis is a reminder from Ghazala Institute that your fee payment is now overdue.\nCourse: ${student.course} (${student.mode})\nAmount Due: Rs. ${student.amount || ''}\nDue Date: ${student.due_date}\n\nKindly ensure your payment is submitted as soon as possible to avoid any inconvenience.\nFor any queries, please contact our administration.\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`
       );
       await pool.query(
         'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
