@@ -10,26 +10,21 @@ import SettingsPanel from './components/SettingsPanel';
 import ReportsPage from './components/ReportsPage';
 import { COURSES, MODES, ENROLL_STATUSES, fmt, formatDate, todayStr, monthLabel, shiftMonth, shiftYear, COURSE_SHORT } from './helpers';
 import logoUrl from './Logo - Change - Copy.png';
-
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
-
 export default function App() {
   const [username, setUsername] = useState(null);
   const [role, setRoleState] = useState(null);
   const [checking, setChecking] = useState(true);
-
   function doLogout() {
     setToken(null);
     setRole(null);
     setUsername(null);
     setRoleState(null);
   }
-
   function handleLoggedIn(u, r) {
     setUsername(u);
     setRoleState(r);
   }
-
   useEffect(() => {
     setUsername(getToken() ? 'admin' : null);
     setRoleState(getRole());
@@ -38,7 +33,6 @@ export default function App() {
     window.addEventListener('ghazala-auth-expired', onExpire);
     return () => window.removeEventListener('ghazala-auth-expired', onExpire);
   }, []);
-
   useEffect(() => {
     if (!username) return;
     let timer = setTimeout(doLogout, IDLE_TIMEOUT_MS);
@@ -53,13 +47,11 @@ export default function App() {
       events.forEach(e => window.removeEventListener(e, reset));
     };
   }, [username]);
-
   if (checking) return null;
   if (window.location.pathname === '/reset-password') return <ResetPassword />;
   if (!username) return <Login onLoggedIn={handleLoggedIn} />;
   return <Dashboard onLogout={doLogout} role={role} />;
 }
-
 function Dashboard({ onLogout, role }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showReports, setShowReports] = useState(false);
@@ -101,7 +93,6 @@ const [reminderLogsOpen, setReminderLogsOpen] = useState(false);
       setLoading(false);
     }
   }, [search, courseFilter, modeFilter, statusFilter, enrollStatusFilter, dateFrom, dateTo, selectedMonth]);
-
   const refreshDashboard = useCallback(async () => {
     try {
       const [m, overdue, pending] = await Promise.all([
@@ -114,7 +105,6 @@ const [reminderLogsOpen, setReminderLogsOpen] = useState(false);
       console.error(err);
     }
   }, [selectedMonth]);
-
   useEffect(() => { refreshList(); }, [refreshList]);
   useEffect(() => { refreshDashboard(); }, [refreshDashboard]);
 useEffect(() => {
@@ -136,7 +126,6 @@ useEffect(() => {
     const s = await api.getStudent(id);
     openEdit(s);
   }
-
   async function handleDelete(id) {
     await api.deleteStudent(id);
     setConfirmDeleteId(null);
@@ -145,31 +134,26 @@ useEffect(() => {
     refreshDashboard();
     if (drillDown) setDrillDown(d => ({ ...d, students: d.students.filter(s => s.id !== id) }));
   }
-
   function handleSaved() {
     setModalOpen(false);
     refreshList();
     refreshDashboard();
   }
-
   function handleDetailChanged(updated) {
     setDetailStudent(updated);
     refreshList();
     refreshDashboard();
     if (drillDown) setDrillDown(d => ({ ...d, students: d.students.map(s => s.id === updated.id ? updated : s) }));
   }
-
   async function showDrillDown(title, ids) {
     if (!ids || ids.length === 0) { setDrillDown({ title, students: [] }); return; }
     const list = await api.byIds(ids);
     setDrillDown({ title, students: list });
   }
-
   async function showCourseDrillDown(course) {
     const list = await api.listStudents({ month: selectedMonth, course });
     setDrillDown({ title: `${course} students — ${monthLabel(selectedMonth)}`, students: list });
   }
-
   async function downloadCsv() {
     const url = await api.exportCsvUrl();
     const a = document.createElement('a');
@@ -213,25 +197,34 @@ async function sendReminders() {
     { key: 'inst1', label: '1st installment outstanding', value: fmt(monthly.inst1Outstanding), sub: `${monthly.inst1Count} student${monthly.inst1Count === 1 ? '' : 's'}`, color: '#9C6B26', mono: true, onClick: () => showDrillDown(`1st installment due — ${monthLabel(selectedMonth)}`, monthly.inst1Ids) },
     { key: 'inst2', label: '2nd installment outstanding', value: fmt(monthly.inst2Outstanding), sub: `${monthly.inst2Count} student${monthly.inst2Count === 1 ? '' : 's'}`, color: '#9C6B26', mono: true, onClick: () => showDrillDown(`2nd installment due — ${monthLabel(selectedMonth)}`, monthly.inst2Ids) },
   ] : [];
-
   const statusLabel = search.trim() && dateFrom && dateTo
     ? `Search results for "${search.trim()}" within ${formatDate(dateFrom)} → ${formatDate(dateTo)}`
     : search.trim() ? `Search results across all months for "${search.trim()}"`
     : (dateFrom && dateTo) ? `Registrations from ${formatDate(dateFrom)} to ${formatDate(dateTo)}`
     : `Students registered in ${monthLabel(selectedMonth)}`;
-
   if (showReports) {
     return <ReportsPage onBack={() => setShowReports(false)} />;
   }
-
   return (
     <div style={{ minHeight: '100vh', background: '#F7F3EC', fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", color: '#1B2A4A', paddingBottom: 60 }}>
-      <div style={{ borderBottom: '2px solid #1B2A4A', padding: '24px 20px 18px', background: '#F7F3EC' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .gl-logo { height: 64px !important; }
+          .gl-stats { grid-template-columns: repeat(2, 1fr) !important; }
+          .gl-header-row { justify-content: center !important; }
+          .gl-header-buttons { width: 100%; justify-content: center; }
+          .gl-month-nav { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+          .gl-month-nav::-webkit-scrollbar { height: 4px; }
+          .gl-header-pad { padding: 14px 12px 12px !important; }
+          .gl-main-pad { padding: 16px 12px !important; }
+        }
+      `}</style>
+      <div className="gl-header-pad" style={{ borderBottom: '2px solid #1B2A4A', padding: '24px 20px 18px', background: '#F7F3EC' }}>
+        <div className="gl-header-row" style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src={logoUrl} alt="Ghazala Institute" style={{ height: 150, width: 'auto' }} />
+            <img className="gl-logo" src={logoUrl} alt="Ghazala Institute" style={{ height: 150, width: 'auto', maxWidth: '100%' }} />
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="gl-header-buttons" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
            <button onClick={sendReminders} disabled={reminderSending} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#2F6F4E' }}>
   <Bell size={14} /> {reminderSending ? 'Sending...' : 'Send Reminders'}
 </button>
@@ -254,18 +247,16 @@ async function sendReminders() {
           </div>
         </div>
       </div>
-
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
+      <div className="gl-main-pad" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
         {loadError && (
           <div style={{ background: '#F7E6E1', border: '1px solid #B0432F', color: '#B0432F', padding: '10px 14px', borderRadius: 6, marginBottom: 16, fontSize: 13 }}>{loadError}</div>
         )}
-
         {overdueIds.length > 0 && (
           <button onClick={() => showDrillDown('Overdue payments', overdueIds)} style={{
             display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', marginBottom: 10,
             background: '#F7E6E1', border: '1px solid #B0432F', borderRadius: 6, padding: '10px 14px', cursor: 'pointer',
           }}>
-            <AlertTriangle size={16} style={{ color: '#B0432F' }} />
+            <AlertTriangle size={16} style={{ color: '#B0432F', flexShrink: 0 }} />
             <span style={{ fontSize: 13, color: '#B0432F' }}><b>{overdueIds.length}</b> payment{overdueIds.length === 1 ? '' : 's'} overdue right now — tap to review</span>
           </button>
         )}
@@ -274,27 +265,25 @@ async function sendReminders() {
             display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', marginBottom: 16,
             background: '#FBF1E0', border: '1px solid #C68A3F', borderRadius: 6, padding: '10px 14px', cursor: 'pointer',
           }}>
-            <Camera size={16} style={{ color: '#9C6B26' }} />
+            <Camera size={16} style={{ color: '#9C6B26', flexShrink: 0 }} />
             <span style={{ fontSize: 13, color: '#9C6B26' }}><b>{pendingImageIds.length}</b> student{pendingImageIds.length === 1 ? '' : 's'} missing photos — tap to review</span>
           </button>
         )}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div className="gl-month-nav" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
           <button onClick={() => setSelectedMonth(shiftYear(selectedMonth, -1))} title="Previous year" style={navBtn}><ChevronsLeft size={16} /></button>
           <button onClick={() => setSelectedMonth(shiftMonth(selectedMonth, -1))} title="Previous month" style={navBtn}><ChevronLeft size={16} /></button>
-          <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 16, minWidth: 150, textAlign: 'center', background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '6px 14px' }}>
+          <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 16, minWidth: 150, textAlign: 'center', background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '6px 14px', flexShrink: 0 }}>
             {monthLabel(selectedMonth)}
           </div>
           <button onClick={() => setSelectedMonth(shiftMonth(selectedMonth, 1))} title="Next month" style={navBtn}><ChevronRight size={16} /></button>
           <button onClick={() => setSelectedMonth(shiftYear(selectedMonth, 1))} title="Next year" style={navBtn}><ChevronsRight size={16} /></button>
-          <input type="month" value={selectedMonth} onChange={e => e.target.value && setSelectedMonth(e.target.value)} style={{ background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '6px 10px', fontSize: 13 }} />
+          <input type="month" value={selectedMonth} onChange={e => e.target.value && setSelectedMonth(e.target.value)} style={{ background: '#FFFDFA', border: '1px solid #D8D0BC', borderRadius: 6, padding: '6px 10px', fontSize: 13, flexShrink: 0 }} />
           {selectedMonth !== todayStr().slice(0, 7) && (
-            <button onClick={() => setSelectedMonth(todayStr().slice(0, 7))} style={{ background: 'none', border: 'none', color: '#9C6B26', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>Jump to this month</button>
+            <button onClick={() => setSelectedMonth(todayStr().slice(0, 7))} style={{ background: 'none', border: 'none', color: '#9C6B26', fontSize: 12, cursor: 'pointer', textDecoration: 'underline', whiteSpace: 'nowrap', flexShrink: 0 }}>Jump to this month</button>
           )}
         </div>
-
         {role !== 'agent' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }} className="gl-stats">
+          <div className="gl-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
             {statCards.map(c => (
               <button key={c.key} onClick={c.onClick} style={{ background: '#FFFDFA', border: '1px solid #E3DCC9', borderRadius: 6, padding: '14px 16px', textAlign: 'left', cursor: 'pointer', font: 'inherit' }}>
                 <div style={{ fontSize: 11, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{c.label}</div>
@@ -313,7 +302,6 @@ async function sendReminders() {
             ))}
           </div>
         )}
-
         {!drillDown && (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12, fontSize: 13 }}>
             <span style={{ color: '#6B6458', fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}>Date range:</span>
@@ -325,7 +313,6 @@ async function sendReminders() {
             )}
           </div>
         )}
-
         {drillDown ? (
           <div>
             <button onClick={() => setDrillDown(null)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#1B2A4A', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginBottom: 10, padding: 0 }}>
@@ -370,11 +357,9 @@ async function sendReminders() {
                 <Plus size={15} /> Add student
               </button>
             </div>
-
             <div style={{ fontSize: 12, color: '#6B6458', marginBottom: 8 }}>
               {statusLabel} · {students.length} record{students.length === 1 ? '' : 's'}
             </div>
-
             {loading ? (
               <div style={{ textAlign: 'center', padding: 40, color: '#6B6458' }}>Loading…</div>
             ) : (
@@ -384,7 +369,6 @@ async function sendReminders() {
           </>
         )}
       </div>
-
       {modalOpen && <StudentModal initial={editingStudent} onSave={handleSaved} onClose={() => setModalOpen(false)} />}
       {detailStudent && (
         <DetailDrawer student={detailStudent} onClose={() => setDetailStudent(null)} onChanged={handleDetailChanged}
@@ -405,30 +389,25 @@ function ReminderLogsModal({ onClose }) {
   const [loading, setLoading] = useState(true);
   const [filterDate, setFilterDate] = useState('');
   const [filterStudent, setFilterStudent] = useState('');
-
   useEffect(() => {
     api.reminderLogs().then(data => { setLogs(data); setLoading(false); }).catch(() => setLoading(false));
   }, []);
-
   useEffect(() => {
     function handleEsc(e) { if (e.key === 'Escape') onClose(); }
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
-
   const filtered = logs.filter(log => {
     const dateMatch = filterDate ? (log.created_at && log.created_at.slice(0, 10) === filterDate) : true;
     const studentMatch = filterStudent ? (log.student_name && log.student_name.toLowerCase().includes(filterStudent.toLowerCase())) : true;
     return dateMatch && studentMatch;
   });
-
   const grouped = {};
   filtered.forEach(log => {
     const date = log.created_at ? log.created_at.slice(0, 10) : 'Unknown';
     if (!grouped[date]) grouped[date] = [];
     grouped[date].push(log);
   });
-
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(27,42,74,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 60 }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#F7F3EC', borderRadius: 10, padding: 24, width: '100%', maxWidth: 650, maxHeight: '85vh', overflowY: 'auto', border: '1px solid #1B2A4A' }}>
@@ -436,8 +415,6 @@ function ReminderLogsModal({ onClose }) {
           <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 20, margin: 0 }}>Reminder Logs · {logs.length} total</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6458' }}><X size={18} /></button>
         </div>
-
-        {/* Filters */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
             style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #D8D0BC', background: '#FFFDFA', fontSize: 13 }} />
@@ -451,14 +428,11 @@ function ReminderLogsModal({ onClose }) {
             </button>
           )}
         </div>
-
         <div style={{ fontSize: 12, color: '#6B6458', marginBottom: 12 }}>
           Showing {filtered.length} of {logs.length} reminders
         </div>
-
         {loading && <div style={{ color: '#6B6458', fontSize: 13 }}>Loading…</div>}
         {!loading && filtered.length === 0 && <div style={{ color: '#6B6458', fontSize: 13 }}>No reminders found.</div>}
-
         {Object.entries(grouped).map(([date, dayLogs]) => (
           <div key={date} style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#1B2A4A', marginBottom: 6, borderBottom: '1px solid #E3DCC9', paddingBottom: 4 }}>
