@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Camera } from 'lucide-react';
-import { COURSES, COURSE_FEES, MODES, ENROLL_STATUSES, REG_FEE_DEFAULT, fmt, formatDate, todayStr, findPayment } from '../helpers';
+import { COURSES, COURSE_FEES, MODES, ENROLL_STATUSES, REG_FEE_DEFAULT, INSTRUCTORS, SCHEDULE_OPTIONS, getCourseScheduleDefault, calculateEndDate, fmt, formatDate, todayStr, findPayment } from '../helpers';
 import { api } from '../api/client';
 
 export default function StudentModal({ initial, onSave, onClose }) {
@@ -15,6 +15,20 @@ export default function StudentModal({ initial, onSave, onClose }) {
   const [regDate, setRegDate] = useState(initial?.reg_date || todayStr());
   const [discount, setDiscount] = useState(initial?.discount ?? 0);
   const [paymentMode, setPaymentMode] = useState(initial?.payment_mode || 'installment');
+
+  // Instructor: dropdown of known names, or "Other" to type a custom one — once an
+  // existing student has a name not in the known list, we still show it correctly
+  // by treating it as the "Other" case rather than silently losing the value.
+  const initialInstructorIsCustom = initial?.instructor && !INSTRUCTORS.includes(initial.instructor);
+  const [instructorChoice, setInstructorChoice] = useState(
+    initial?.instructor ? (initialInstructorIsCustom ? 'Other' : initial.instructor) : ''
+  );
+  const [instructorCustom, setInstructorCustom] = useState(initialInstructorIsCustom ? initial.instructor : '');
+
+  const [classSchedule, setClassSchedule] = useState(initial?.class_schedule || getCourseScheduleDefault(initial?.course || COURSES[0], initial?.mode || 'Onsite').schedule);
+  const [courseStartDate, setCourseStartDate] = useState(initial?.course_start_date || '');
+  const [courseEndDate, setCourseEndDate] = useState(initial?.course_end_date || '');
+  const [endDateManuallySet, setEndDateManuallySet] = useState(!!initial?.course_end_date);
 
   const regPayment = initial && findPayment(initial, 'registration');
   const inst1Payment = initial && findPayment(initial, 'installment1');
@@ -47,17 +61,26 @@ export default function StudentModal({ initial, onSave, onClose }) {
       setImagesLoaded(true);
     })();
   }, [initial]);
-React.useEffect(() => {
-    function handleEsc(e) {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+
   function handleCourseChange(c) {
     setCourse(c);
     setCourseFee(COURSE_FEES[c] ?? 0);
+    if (!endDateManuallySet) setClassSchedule(getCourseScheduleDefault(c, mode).schedule);
   }
+  function handleModeChange(m) {
+    setMode(m);
+    if (!endDateManuallySet) setClassSchedule(getCourseScheduleDefault(course, m).schedule);
+  }
+
+  // Recompute the end date whenever start date, schedule, or course/mode (which
+  // determines total classes) change — but only while the admin hasn't manually
+  // typed their own end date, so an intentional override never gets clobbered.
+  React.useEffect(() => {
+    if (endDateManuallySet) return;
+    if (!courseStartDate || !classSchedule) { setCourseEndDate(''); return; }
+    const { totalClasses } = getCourseScheduleDefault(course, mode);
+    setCourseEndDate(calculateEndDate(courseStartDate, classSchedule, totalClasses));
+  }, [courseStartDate, classSchedule, course, mode, endDateManuallySet]);
 
   const previewTotal = (Number(registrationFee) || 0) + (Number(courseFee) || 0) - (Number(discount) || 0);
   const remaining = previewTotal - (Number(registrationFee) || 0);
@@ -89,6 +112,8 @@ React.useEffect(() => {
         regDate, discount: Number(discount) || 0, paymentMode,
         inst1Date, inst2Date, lumpsumDate, remarks,
         regPaid, inst1Paid, inst2Paid, lumpsumPaid,
+        instructor: instructorChoice === 'Other' ? instructorCustom.trim() : (instructorChoice || null),
+        classSchedule, courseStartDate: courseStartDate || null, courseEndDate: courseEndDate || null,
       };
       const saved = initial ? await api.updateStudent(initial.id, payload) : await api.createStudent(payload);
       if (pendingFiles.length > 0) {
@@ -137,7 +162,7 @@ React.useEffect(() => {
             </select>
           </label>
           <label style={{ ...labelStyle, flex: 1 }}>Mode
-            <select style={inputStyle} value={mode} onChange={e => setMode(e.target.value)}>
+            <select style={inputStyle} value={mode} onChange={e => handleModeChange(e.target.value)}>
               {MODES.map(m => <option key={m}>{m}</option>)}
             </select>
           </label>
@@ -163,6 +188,46 @@ React.useEffect(() => {
 
         <label style={{ ...labelStyle, display: 'block', marginTop: 12 }}>Discount (optional)
           <input style={inputStyle} type="number" value={discount} onChange={e => setDiscount(e.target.value)} placeholder="0" />
+        </label>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+          <label style={{ ...labelStyle, flex: 1 }}>Instructor
+            <select style={inputStyle} value={instructorChoice} onChange={e => setInstructorChoice(e.target.value)}>
+              <option value="">— Not assigned —</option>
+              {INSTRUCTORS.map(i => <option key={i}>{i}</option>)}
+              <option value="Other">Other (type name)</option>
+            </select>
+          </label>
+          {instructorChoice === 'Other' && (
+            <label style={{ ...labelStyle, flex: 1 }}>Instructor name
+              <input style={inputStyle} value={instructorCustom} onChange={e => setInstructorCustom(e.target.value)} placeholder="Type name" />
+            </label>
+          )}
+        </div>
+
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6458', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 16, marginBottom: 6 }}>
+          Course schedule
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <label style={{ ...labelStyle, flex: 1 }}>Class days
+            <select style={inputStyle} value={classSchedule} onChange={e => setClassSchedule(e.target.value)}>
+              {SCHEDULE_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </label>
+          <label style={{ ...labelStyle, flex: 1 }}>Start date
+            <input style={inputStyle} type="date" value={courseStartDate} onChange={e => setCourseStartDate(e.target.value)} />
+            <span style={datePreview}>{formatDate(courseStartDate)}</span>
+          </label>
+        </div>
+        <label style={{ ...labelStyle, display: 'block', marginTop: 10 }}>End date
+          <input style={inputStyle} type="date" value={courseEndDate}
+            onChange={e => { setCourseEndDate(e.target.value); setEndDateManuallySet(true); }} />
+          <span style={datePreview}>{formatDate(courseEndDate)}</span>
+          {!endDateManuallySet && courseEndDate && (
+            <span style={{ display: 'block', fontSize: 11, color: '#6B6458', marginTop: 2, textTransform: 'none', fontWeight: 400 }}>
+              Auto-calculated from start date + class schedule. Edit to override.
+            </span>
+          )}
         </label>
 
         <label style={{ ...checkRow, marginTop: 16, fontWeight: 700 }}>
