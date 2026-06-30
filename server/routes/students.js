@@ -125,11 +125,12 @@ router.post('/', async (req, res) => {
     await conn.beginTransaction();
 
     await conn.query(
-      `INSERT INTO students (id, name, slip_no, phone, course, mode, status, course_fee, registration_fee, reg_date, discount, payment_mode, remarks)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO students (id, name, slip_no, phone, course, mode, status, course_fee, registration_fee, reg_date, discount, payment_mode, remarks, instructor, class_schedule, course_start_date, course_end_date)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [id, d.name.trim(), d.slipNo || null, d.phone || null, d.course, d.mode || 'Onsite', d.status || 'Active',
         studentRow.course_fee, studentRow.registration_fee, d.regDate, studentRow.discount,
-        d.paymentMode || 'installment', d.remarks || null]
+        d.paymentMode || 'installment', d.remarks || null,
+        d.instructor || null, d.classSchedule || null, d.courseStartDate || null, d.courseEndDate || null]
     );
 
     const fullStudent = { registration_fee: studentRow.registration_fee, course_fee: studentRow.course_fee, discount: studentRow.discount };
@@ -186,11 +187,12 @@ router.put('/:id', async (req, res) => {
     await conn.beginTransaction();
 
     await conn.query(
-      `UPDATE students SET name=?, slip_no=?, phone=?, course=?, mode=?, status=?, course_fee=?, registration_fee=?, reg_date=?, discount=?, payment_mode=?, remarks=?
+      `UPDATE students SET name=?, slip_no=?, phone=?, course=?, mode=?, status=?, course_fee=?, registration_fee=?, reg_date=?, discount=?, payment_mode=?, remarks=?, instructor=?, class_schedule=?, course_start_date=?, course_end_date=?
        WHERE id=?`,
       [d.name.trim(), d.slipNo || null, d.phone || null, d.course, d.mode || 'Onsite', d.status || 'Active',
         Number(d.courseFee) || 0, Number(d.registrationFee) || 0, d.regDate, Number(d.discount) || 0,
-        d.paymentMode || 'installment', d.remarks || null, id]
+        d.paymentMode || 'installment', d.remarks || null,
+        d.instructor || null, d.classSchedule || null, d.courseStartDate || null, d.courseEndDate || null, id]
     );
 
     const fullStudent = { registration_fee: Number(d.registrationFee) || 0, course_fee: Number(d.courseFee) || 0, discount: Number(d.discount) || 0 };
