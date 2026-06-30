@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS students (
   course VARCHAR(100) NOT NULL,
   mode ENUM('Onsite','Online') NOT NULL DEFAULT 'Onsite',
   status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
+  instructor VARCHAR(100) DEFAULT NULL,
+  class_schedule ENUM('mon_wed_fri','mon_thu','mon_sat','weekend') DEFAULT NULL,
+  course_start_date DATE DEFAULT NULL,
+  course_end_date DATE DEFAULT NULL,
   course_fee INT NOT NULL DEFAULT 0,
   registration_fee INT NOT NULL DEFAULT 0,
   reg_date DATE NOT NULL,
@@ -73,6 +77,15 @@ CREATE TABLE IF NOT EXISTS login_history (
   INDEX idx_created_at (created_at)
 );
 -- Phase 4: WhatsApp fee reminders — every reminder sent (manual or automatic) is logged here.
+CREATE TABLE IF NOT EXISTS student_comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id VARCHAR(36) NOT NULL,
+  comment_text TEXT NOT NULL,
+  created_by VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  INDEX idx_student (student_id)
+);
 CREATE TABLE IF NOT EXISTS reminder_logs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   student_id VARCHAR(36) NOT NULL,
