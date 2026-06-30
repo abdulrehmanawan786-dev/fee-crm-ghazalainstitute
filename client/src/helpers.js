@@ -7,10 +7,67 @@ export const COURSE_SHORT = {
   'German A1': 'A1', 'German A1 Online': 'A1 Online', 'German A2': 'A2', 'German B1': 'B1',
   'German B2.1': 'B2.1', 'German B2.2': 'B2.2', 'IELTS': 'IELTS', 'PTE': 'PTE', 'English Language': 'English',
 };
-export const METHODS = ['Cash', 'Bank Transfer', 'JazzCash', 'EasyPaisa', 'Card'];
+export const METHODS = ['Cash', 'Bank Transfer (Meezan - 8204)', 'Bank Transfer (Meezan - 7217)', 'QR Code', 'Card', 'Cash & Online'];
 export const MODES = ['Onsite', 'Online'];
 export const ENROLL_STATUSES = ['Active', 'Inactive'];
 export const REG_FEE_DEFAULT = 2000;
+
+export const INSTRUCTORS = [
+  'Miss Ghazala', 'Miss Fizza', 'Miss Waniya', 'Sir Hamza', 'Sir Mustafa',
+  'Sir Abdullah', 'Sir Hateem', 'Sir Abdul Rehman', 'Miss Rimsha',
+];
+
+export const SCHEDULE_OPTIONS = [
+  { value: 'mon_wed_fri', label: 'Mon-Wed-Fri', days: [1, 3, 5] },
+  { value: 'mon_thu', label: 'Mon-Thu', days: [1, 2, 3, 4] },
+  { value: 'mon_sat', label: 'Mon-Sat', days: [1, 2, 3, 4, 5, 6] },
+  { value: 'weekend', label: 'Weekend (Sat-Sun)', days: [6, 0] },
+];
+
+export const COURSE_SCHEDULE_DEFAULTS = {
+  'German A1|Onsite': { schedule: 'mon_wed_fri', totalClasses: 24 },
+  'German A1|Online': { schedule: 'mon_thu', totalClasses: 24 },
+  'German A1 Online|Onsite': { schedule: 'mon_thu', totalClasses: 24 },
+  'German A1 Online|Online': { schedule: 'mon_thu', totalClasses: 24 },
+  'German A2|Onsite': { schedule: 'mon_wed_fri', totalClasses: 24 },
+  'German A2|Online': { schedule: 'mon_thu', totalClasses: 32 },
+  'German B1|Onsite': { schedule: 'mon_wed_fri', totalClasses: 24 },
+  'German B1|Online': { schedule: 'mon_thu', totalClasses: 32 },
+  'German B2.1|Onsite': { schedule: 'mon_wed_fri', totalClasses: 24 },
+  'German B2.1|Online': { schedule: 'mon_thu', totalClasses: 32 },
+  'German B2.2|Onsite': { schedule: 'mon_wed_fri', totalClasses: 24 },
+  'German B2.2|Online': { schedule: 'mon_thu', totalClasses: 32 },
+  'IELTS|Onsite': { schedule: 'mon_sat', totalClasses: 48 },
+  'IELTS|Online': { schedule: 'mon_sat', totalClasses: 48 },
+  'PTE|Onsite': { schedule: 'mon_sat', totalClasses: 24 },
+  'PTE|Online': { schedule: 'mon_sat', totalClasses: 24 },
+  'English Language|Onsite': { schedule: 'mon_sat', totalClasses: 24 },
+  'English Language|Online': { schedule: 'mon_sat', totalClasses: 24 },
+};
+
+export function getCourseScheduleDefault(course, mode) {
+  return COURSE_SCHEDULE_DEFAULTS[`${course}|${mode}`] || { schedule: 'mon_wed_fri', totalClasses: 24 };
+}
+
+export function calculateEndDate(startDateStr, scheduleValue, totalClasses) {
+  if (!startDateStr || !scheduleValue || !totalClasses) return '';
+  const schedule = SCHEDULE_OPTIONS.find(s => s.value === scheduleValue);
+  if (!schedule) return '';
+  const [y, m, d] = startDateStr.split('-').map(Number);
+  let current = new Date(y, m - 1, d);
+  let classesCounted = 0;
+  for (let i = 0; i < 2000 && classesCounted < totalClasses; i++) {
+    if (schedule.days.includes(current.getDay())) {
+      classesCounted++;
+      if (classesCounted === totalClasses) break;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  const yyyy = current.getFullYear();
+  const mm = String(current.getMonth() + 1).padStart(2, '0');
+  const dd = String(current.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 export function fmt(n) { return 'Rs ' + Number(n || 0).toLocaleString('en-PK'); }
 export function todayStr() { return new Date().toISOString().slice(0, 10); }
