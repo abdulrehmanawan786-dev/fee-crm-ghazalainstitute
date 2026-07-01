@@ -1,7 +1,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
-const { sendWhatsAppMessage } = require('../utils/whatsapp');
+const { sendWhatsAppTemplate } = require('../utils/whatsapp');
 const router = express.Router();
 
 async function sendReminders(sentBy, sentByRole) {
@@ -24,10 +24,7 @@ async function sendReminders(sentBy, sentByRole) {
     let sent = 0;
     for (const student of students) {
       if (!student.phone) continue;
-
-      const message = `Dear ${student.name},\n\nThis is a friendly reminder from Ghazala Institute regarding your upcoming fee payment.\n\n📚 Course: ${student.course} (${student.mode})\n💰 Amount Due: Rs. ${student.amount}\n📅 Due Date: ${student.due_date}\n\nKindly ensure your payment is submitted before the due date to avoid any inconvenience.\n\nFor any queries, please contact our administration.\n\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`;
-
-      await sendWhatsAppMessage(student.phone, message);
+      await sendWhatsAppTemplate(student.phone, student.name, `${student.course} (${student.mode})`, student.amount || '', student.due_date);
       await pool.query(
         'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
         [student.id, sentBy, sentByRole, 'fee_reminder']
@@ -40,8 +37,7 @@ async function sendReminders(sentBy, sentByRole) {
     throw err;
   }
 }
-// Single student reminder — for one SPECIFIC payment only (registration, installment1,
-// installment2, or lumpsum), never for every outstanding payment on the student.
+
 router.post('/send/:studentId', requireAuth, async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -55,13 +51,14 @@ router.post('/send/:studentId', requireAuth, async (req, res) => {
       WHERE s.id = ?
       AND p.type = ?
       AND p.paid_date IS NULL
+      AND s.status = 'Active'
+      AND s.remarks IS NULL
     `, [studentId, type]);
 
-    if (!student) return res.status(404).json({ error: 'No outstanding payment of this type found for this student.' });
+    if (!student) return res.status(404).json({ error: 'No outstanding payment found, or this student is Inactive/Dropped/Refunded.' });
     if (!student.phone) return res.status(400).json({ error: 'This student has no phone number on file.' });
 
-    const message = `Dear ${student.name},\n\nThis is a friendly reminder from Ghazala Institute regarding your upcoming fee payment.\n\n📚 Course: ${student.course} (${student.mode})\n💰 Amount Due: Rs. ${student.amount}\n📅 Due Date: ${student.due_date}\n\nKindly ensure your payment is submitted before the due date to avoid any inconvenience.\n\nFor any queries, please contact our administration.\n\nThank you for being a part of Ghazala Institute.\n\nWarm regards,\nGhazala Institute`;
-    await sendWhatsAppMessage(student.phone, message);
+    await sendWhatsAppTemplate(student.phone, student.name, `${student.course} (${student.mode})`, student.amount || '', student.due_date);
     await pool.query(
       'INSERT INTO reminder_logs (student_id, sent_by, sent_by_role, message_type) VALUES (?, ?, ?, ?)',
       [student.id, req.admin.username, req.admin.role, `fee_reminder_${type}`]
@@ -72,6 +69,7 @@ router.post('/send/:studentId', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Could not send reminder.' });
   }
 });
+
 router.post('/send', requireAuth, async (req, res) => {
   try {
     const result = await sendReminders(req.admin.username, req.admin.role);
