@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const pool = require('./config/db');
 const { sendWhatsAppTemplate } = require('./utils/whatsapp');
 
-cron.schedule('02 12 * * *', async () => {
+cron.schedule('21 12 * * *', async () => {
   console.log('Running daily fee reminders...');
   try {
     const [dueToday] = await pool.query(`
