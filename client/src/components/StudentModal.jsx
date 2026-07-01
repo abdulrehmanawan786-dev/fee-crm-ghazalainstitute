@@ -85,9 +85,9 @@ export default function StudentModal({ initial, onSave, onClose }) {
   const previewInst1 = Math.round(remaining / 2);
   const previewInst2 = remaining - previewInst1;
 
-  function handleFilePick(fileList) {
-    setPendingFiles(prev => [...prev, ...Array.from(fileList)]);
-  }
+  function handleFilePick(files) {
+  setPendingFiles(prev => [...prev, ...files]);
+}
   function removePendingFile(idx) {
     setPendingFiles(prev => prev.filter((_, i) => i !== idx));
   }
@@ -330,7 +330,11 @@ export default function StudentModal({ initial, onSave, onClose }) {
               <Camera size={20} />
             </button>
             <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
-              onChange={e => { if (e.target.files.length) handleFilePick(e.target.files); e.target.value = ''; }} />
+              onChange={e => {
+                const files = Array.from(e.target.files);
+                if (files.length) handleFilePick(files);
+                e.target.value = '';
+              }} />
           </div>
           <div style={{ fontSize: 11, color: '#6B6458', marginTop: 4 }}>e.g. CNIC, fee receipt.</div>
         </div>
