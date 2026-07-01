@@ -24,7 +24,7 @@ async function sendWhatsAppMessage(phone, message) {
 }
 
 async function sendWhatsAppTemplate(phone, studentName, course, amount, dueDate) {
-  const number = formatPhone(phone);
+  const number = '+' + formatPhone(phone);
   try {
     const response = await axios.post(
       'http://localhost:3000/api/internal/send-template',
