@@ -133,11 +133,42 @@ function ManageTeam() {
   const [newRole, setNewRole] = useState('agent');
   const [addError, setAddError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUsername, setEditUsername] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState('agent');
+  const [editError, setEditError] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
   function load() {
     api.listUsers().then(setUsers).catch(err => setError(err.message));
   }
   useEffect(() => { load(); }, []);
+
+  function openEdit(u) {
+    setEditingUser(u);
+    setEditUsername(u.username);
+    setEditPassword('');
+    setEditRole(u.role);
+    setEditError('');
+    setShowAdd(false);
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault();
+    setEditError('');
+    if (editPassword && editPassword.length < 8) { setEditError('Password must be at least 8 characters.'); return; }
+    setEditSaving(true);
+    try {
+      await api.updateUser(editingUser.id, editUsername.trim(), editPassword || null, editRole);
+      setEditingUser(null);
+      load();
+    } catch (err) {
+      setEditError(err.message);
+    } finally {
+      setEditSaving(false);
+    }
+  }
 
   async function addUser(e) {
     e.preventDefault();
@@ -175,18 +206,46 @@ function ManageTeam() {
     <div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
         {users.map(u => (
-          <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 6, background: '#FFFDFA', border: '1px solid #E3DCC9', fontSize: 13 }}>
-            <div>
-              <b>{u.username}</b>{' '}
-              <span style={{ fontSize: 10, fontWeight: 700, color: u.role === 'admin' ? '#1B2A4A' : '#9C6B26', border: '1px solid #D8D0BC', borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase', marginLeft: 4 }}>{u.role}</span>
+          <div key={u.id}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: editingUser?.id === u.id ? '6px 6px 0 0' : 6, background: '#FFFDFA', border: '1px solid #E3DCC9', fontSize: 13 }}>
+              <div>
+                <b>{u.username}</b>{' '}
+                <span style={{ fontSize: 10, fontWeight: 700, color: u.role === 'admin' ? '#1B2A4A' : '#9C6B26', border: '1px solid #D8D0BC', borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase', marginLeft: 4 }}>{u.role}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => editingUser?.id === u.id ? setEditingUser(null) : openEdit(u)} style={{ background: 'none', border: 'none', color: '#1B2A4A', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>
+                  {editingUser?.id === u.id ? 'Cancel' : 'Edit'}
+                </button>
+                <button onClick={() => removeUser(u.id, u.username)} style={{ background: 'none', border: 'none', color: '#B0432F', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
+              </div>
             </div>
-            <button onClick={() => removeUser(u.id, u.username)} style={{ background: 'none', border: 'none', color: '#B0432F', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
+
+            {editingUser?.id === u.id && (
+              <form onSubmit={saveEdit} style={{ border: '1px solid #E3DCC9', borderTop: 'none', borderRadius: '0 0 6px 6px', padding: 12, background: '#F7F3EC' }}>
+                <label style={labelStyle}>Username
+                  <input style={inputStyle} value={editUsername} onChange={e => setEditUsername(e.target.value)} />
+                </label>
+                <label style={{ ...labelStyle, display: 'block', marginTop: 8 }}>New password <span style={{ color: '#9C6B26', fontSize: 10, fontWeight: 400 }}>(khali chhoden agar change nahi karna)</span>
+                  <input style={inputStyle} type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Leave blank to keep current" />
+                </label>
+                <label style={{ ...labelStyle, display: 'block', marginTop: 8 }}>Role
+                  <select style={inputStyle} value={editRole} onChange={e => setEditRole(e.target.value)}>
+                    <option value="agent">Agent</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+                {editError && <div style={{ marginTop: 8, background: '#F7E6E1', border: '1px solid #B0432F', color: '#B0432F', padding: '6px 10px', borderRadius: 6, fontSize: 12 }}>{editError}</div>}
+                <button type="submit" disabled={editSaving} style={{ marginTop: 10, width: '100%', background: '#2F6F4E', color: '#F7F3EC', border: 'none', borderRadius: 6, padding: '8px', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: editSaving ? 0.7 : 1 }}>
+                  {editSaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </form>
+            )}
           </div>
         ))}
       </div>
 
       {!showAdd ? (
-        <button onClick={() => setShowAdd(true)} style={{ width: '100%', background: '#1B2A4A', color: '#F7F3EC', border: 'none', borderRadius: 6, padding: '10px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+        <button onClick={() => { setShowAdd(true); setEditingUser(null); }} style={{ width: '100%', background: '#1B2A4A', color: '#F7F3EC', border: 'none', borderRadius: 6, padding: '10px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
           + Add team member
         </button>
       ) : (
