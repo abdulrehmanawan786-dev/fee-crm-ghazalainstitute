@@ -53,6 +53,7 @@ export const api = {
   listUsers: () => request('/users'),
   createUser: (username, password, role) => request('/users', { method: 'POST', body: JSON.stringify({ username, password, role }) }),
   deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+  updateUser: (id, username, password, role) => request(`/users/${id}`, { method: 'PUT', body: JSON.stringify({ username, password, role }) }),
   listComments: (studentId) => request(`/comments/${studentId}`),
   addComment: (studentId, comment) => request(`/comments/${studentId}`, { method: 'POST', body: JSON.stringify({ comment }) }),
   deleteComment: (commentId) => request(`/comments/comment/${commentId}`, { method: 'DELETE' }),
